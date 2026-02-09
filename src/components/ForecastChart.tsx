@@ -1,4 +1,5 @@
 import { ResponsiveContainer, ComposedChart, Line, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
+import { formatSmartCurrency } from '../lib/formatters';
 
 interface ForecastChartProps {
   data: any[];
@@ -46,11 +47,11 @@ export const ForecastChart = ({ data }: ForecastChartProps) => {
             axisLine={false}
             tickLine={false}
             tick={{ fill: '#64748b', fontSize: 12 }}
-            tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
+            tickFormatter={(value) => formatSmartCurrency(value)}
           />
           <Tooltip 
             contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-            formatter={(value: any) => [`$${Number(value || 0).toLocaleString()}`, 'Revenue']}
+            formatter={(value: any) => [formatSmartCurrency(Number(value || 0)), 'Revenue']}
             labelFormatter={(label) => {
                 if (label instanceof Date) return label.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
                 return '';

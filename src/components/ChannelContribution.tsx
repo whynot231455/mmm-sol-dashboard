@@ -1,6 +1,7 @@
 interface ChannelContributionProps {
   data: any[];
 }
+import { formatSmartCurrency } from '../lib/formatters';
 
 export const ChannelContribution = ({ data }: ChannelContributionProps) => {
   return (
@@ -37,7 +38,7 @@ export const ChannelContribution = ({ data }: ChannelContributionProps) => {
 
             <div className="w-24 text-right">
               <span className="font-bold text-slate-900 block">
-                ${(item.revenue / 1000).toFixed(1)}k
+                {formatSmartCurrency(item.revenue)}
               </span>
               <span className="text-xs text-slate-400">Revenue</span>
             </div>

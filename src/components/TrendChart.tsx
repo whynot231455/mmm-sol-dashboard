@@ -8,6 +8,7 @@ import {
   Tooltip,
   ResponsiveContainer
 } from 'recharts';
+import { formatSmartCurrency } from '../lib/formatters';
 
 interface TrendChartProps {
   data: any[];
@@ -36,7 +37,7 @@ export const TrendChart = ({ data }: TrendChartProps) => {
             axisLine={false} 
             tickLine={false} 
             tick={{ fill: '#64748b', fontSize: 12 }} 
-            tickFormatter={(value) => `$${value}`}
+            tickFormatter={(value) => formatSmartCurrency(value)}
           />
           <YAxis 
             yAxisId="right" 
@@ -44,9 +45,10 @@ export const TrendChart = ({ data }: TrendChartProps) => {
             axisLine={false} 
             tickLine={false} 
             tick={{ fill: '#64748b', fontSize: 12 }} 
-            tickFormatter={(value) => `$${value}`}
+            tickFormatter={(value) => formatSmartCurrency(value)}
           />
           <Tooltip 
+            formatter={(value: any) => [formatSmartCurrency(Number(value || 0))]}
             contentStyle={{ 
               backgroundColor: '#fff', 
               borderRadius: '12px', 

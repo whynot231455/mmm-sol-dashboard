@@ -6,6 +6,7 @@ import { ChannelHeatmap } from '../components/ChannelHeatmap';
 import { KPICard } from '../components/KPICard';
 import { TrendingUp, ShieldCheck, Calendar, Download } from 'lucide-react';
 import { useDataStore } from '../store/useDataStore';
+import { formatSmartCurrency, formatPercent } from '../lib/formatters';
 
 export const PredictPage = () => {
   const { setActivePage } = useDataStore();
@@ -65,7 +66,7 @@ export const PredictPage = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
          <KPICard 
            label="Future Revenue (Q4)"
-           value={`$${(metrics.revenue).toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
+           value={formatSmartCurrency(metrics.revenue)}
            trend={`+${(metrics.lift * 100).toFixed(0)}%`}
            trendDirection="up"
            icon={<span className="font-bold text-lg">$</span>} 
@@ -79,7 +80,7 @@ export const PredictPage = () => {
         />
         <KPICard 
            label="Confidence Interval"
-           value={(metrics.confidence * 100).toFixed(0) + '%'}
+           value={formatPercent(metrics.confidence * 100, 0)}
            trend="Stable"
            trendDirection="up"
            icon={<ShieldCheck size={24} />} 

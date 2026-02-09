@@ -12,10 +12,11 @@ import {
   Download, 
   Calendar,
   Globe,
-  Filter
+  Filter,
+  Database
 } from 'lucide-react';
-import { Database } from 'lucide-react';
 import { useDataStore } from '../store/useDataStore';
+import { formatSmartCurrency, formatPercent } from '../lib/formatters';
 
 export const MeasurePage = () => {
   const [selectedCountry, setSelectedCountry] = useState('All');
@@ -119,21 +120,21 @@ export const MeasurePage = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <KPICard 
           label="Total Revenue" 
-          value={`$${(kpi.revenue / 1000000).toFixed(1)}M`} 
+          value={formatSmartCurrency(kpi.revenue)} 
           trend="+5.2%" 
           trendDirection="up"
           icon={<DollarSign size={24} />}
         />
         <KPICard 
           label="Total Spend" 
-          value={`$${(kpi.spend / 1000000).toFixed(1)}M`} 
+          value={formatSmartCurrency(kpi.spend)} 
           trend="+1.2%" 
           trendDirection="up"
           icon={<ShoppingCart size={24} />}
         />
         <KPICard 
           label="ROI" 
-          value={`${kpi.roi.toFixed(0)}%`} 
+          value={formatPercent(kpi.roi, 0)} 
           trend="+8.4%" 
           trendDirection="up"
           icon={<Percent size={24} />}

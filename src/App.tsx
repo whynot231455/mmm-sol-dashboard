@@ -1,7 +1,9 @@
 import { Layout } from './components/Layout';
 import { ImportPage } from './pages/ImportPage';
+import { ConnectPage } from './pages/ConnectPage';
 import { MeasurePage } from './pages/MeasurePage';
 import { PredictPage } from './pages/PredictPage';
+import { OptimizePage } from './pages/OptimizePage';
 import { useDataStore } from './store/useDataStore';
 
 const PlaceholderPage = ({ title }: { title: string }) => (
@@ -22,10 +24,14 @@ function App() {
     switch (activePage) {
       case 'import':
         return <ImportPage />;
+      case 'connect':
+        return <ConnectPage />;
       case 'measure':
         return <MeasurePage />;
       case 'predict':
         return <PredictPage />;
+      case 'optimize':
+        return <OptimizePage />;
       default:
         return <PlaceholderPage title={activePage} />;
     }
