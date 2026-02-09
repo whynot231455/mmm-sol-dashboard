@@ -4,6 +4,7 @@ import { ConnectPage } from './pages/ConnectPage';
 import { MeasurePage } from './pages/MeasurePage';
 import { PredictPage } from './pages/PredictPage';
 import { OptimizePage } from './pages/OptimizePage';
+import { TrainPage } from './pages/TrainPage';
 import { useDataStore } from './store/useDataStore';
 
 const PlaceholderPage = ({ title }: { title: string }) => (
@@ -32,6 +33,8 @@ function App() {
         return <PredictPage />;
       case 'optimize':
         return <OptimizePage />;
+      case 'train':
+        return <TrainPage />;
       default:
         return <PlaceholderPage title={activePage} />;
     }

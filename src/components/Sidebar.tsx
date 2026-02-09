@@ -8,7 +8,6 @@ import {
   Database,
   Cpu,
   Zap,
-  BarChartHorizontal,
   FileCheck,
   FlaskConical,
   Activity,
@@ -73,7 +72,6 @@ export const Sidebar = () => {
       items: [
         { id: "import" as PageType, label: "Import", icon: <Upload size={18} /> },
         { id: "connect" as PageType, label: "Connect", icon: <Database size={18} /> },
-        { id: "transform" as PageType, label: "Transform", icon: <BarChartHorizontal size={18} /> },
       ]
     },
     {

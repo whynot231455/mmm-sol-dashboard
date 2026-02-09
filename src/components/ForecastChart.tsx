@@ -6,6 +6,19 @@ interface ForecastChartProps {
 }
 
 export const ForecastChart = ({ data }: ForecastChartProps) => {
+  // Transform data to have separate keys for historical and predicted
+  const chartData = data.map((item, index) => {
+    const prevItem = index > 0 ? data[index - 1] : null;
+    
+    return {
+      date: item.date,
+      historical: !item.isPredicted ? item.revenue : null,
+      predicted: item.isPredicted ? item.revenue : null,
+      // Include last historical point in predicted to create smooth connection
+      predictedWithConnection: item.isPredicted || (prevItem && !prevItem.isPredicted && data[index + 1]?.isPredicted) ? item.revenue : null,
+    };
+  });
+
   return (
     <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm h-[400px]">
       <div className="flex justify-between items-center mb-6">
@@ -24,7 +37,7 @@ export const ForecastChart = ({ data }: ForecastChartProps) => {
       </div>
 
       <ResponsiveContainer width="100%" height="85%">
-        <ComposedChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+        <ComposedChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
           <defs>
             <linearGradient id="colorPredicted" x1="0" y1="0" x2="0" y2="1">
               <stop offset="5%" stopColor="#871F1E" stopOpacity={0.1}/>
@@ -51,7 +64,11 @@ export const ForecastChart = ({ data }: ForecastChartProps) => {
           />
           <Tooltip 
             contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-            formatter={(value: any) => [formatSmartCurrency(Number(value || 0)), 'Revenue']}
+            formatter={(value: any, name?: string) => {
+              if (value === null || value === undefined) return [];
+              const label = name === 'historical' ? 'Historical Revenue' : 'Predicted Revenue';
+              return [formatSmartCurrency(Number(value || 0)), label];
+            }}
             labelFormatter={(label) => {
                 if (label instanceof Date) return label.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
                 return '';
@@ -61,32 +78,46 @@ export const ForecastChart = ({ data }: ForecastChartProps) => {
           {/* Historical Line */}
           <Line 
             type="monotone" 
-            dataKey="revenue" 
-            data={data.filter(d => !d.isPredicted)} 
+            dataKey="historical"
             stroke="#94a3b8" 
             strokeWidth={3} 
             dot={false}
             activeDot={{ r: 6 }}
+            connectNulls={false}
           />
 
-          {/* Predicted Line (Dashed) */}
+          {/* Predicted Line (Dashed) with connection to last historical point */}
           <Line 
             type="monotone" 
-            dataKey="revenue" 
-            data={data.filter(d => d.isPredicted || d === data.find(i => !i.isPredicted && data[data.indexOf(i)+1]?.isPredicted))} 
+            dataKey="predictedWithConnection"
             stroke="#871F1E" 
             strokeWidth={3} 
             strokeDasharray="5 5"
-            dot={{ r: 4, fill: '#871F1E', strokeWidth: 2, stroke: '#fff' }}
+            dot={(props: any) => {
+              // Only show dots on predicted points, not the connection point
+              const index = props.index;
+              if (index === 0 || !data[index]?.isPredicted) return null;
+              return (
+                <circle
+                  cx={props.cx}
+                  cy={props.cy}
+                  r={4}
+                  fill="#871F1E"
+                  stroke="#fff"
+                  strokeWidth={2}
+                />
+              );
+            }}
+            connectNulls={false}
           />
 
           {/* Predicted Area */}
           <Area
              type="monotone"
-             dataKey="revenue"
-             data={data.filter(d => d.isPredicted)}
+             dataKey="predicted"
              stroke="none"
              fill="url(#colorPredicted)"
+             connectNulls={false}
           />
 
         </ComposedChart>

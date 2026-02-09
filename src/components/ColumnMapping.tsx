@@ -10,10 +10,15 @@ const REQUIRED_FIELDS = [
 ];
 
 export const ColumnMapping = () => {
-  const { headers, mapping, setMapping } = useDataStore();
+  const { headers, mapping, setMapping, setActivePage } = useDataStore();
 
   const handleMap = (field: string, header: string) => {
     setMapping({ ...mapping, [field]: header });
+  };
+
+  const handleContinue = () => {
+    setMapping({ ...mapping });
+    setActivePage('measure');
   };
 
   return (
@@ -54,6 +59,7 @@ export const ColumnMapping = () => {
       ))}
 
       <button
+        onClick={handleContinue}
         disabled={!REQUIRED_FIELDS.every(f => !!mapping[f.id])}
         className="w-full mt-4 bg-slate-900 text-white py-3 rounded-xl font-bold hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-lg shadow-slate-200 flex items-center justify-center gap-2"
       >
