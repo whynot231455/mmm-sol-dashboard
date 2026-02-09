@@ -5,6 +5,8 @@ import { MeasurePage } from './pages/MeasurePage';
 import { PredictPage } from './pages/PredictPage';
 import { OptimizePage } from './pages/OptimizePage';
 import { TrainPage } from './pages/TrainPage';
+import { ValidatePage } from './pages/ValidatePage';
+import { CalibratePage } from './pages/CalibratePage';
 import { useDataStore } from './store/useDataStore';
 
 const PlaceholderPage = ({ title }: { title: string }) => (
@@ -35,6 +37,10 @@ function App() {
         return <OptimizePage />;
       case 'train':
         return <TrainPage />;
+      case 'validate':
+        return <ValidatePage />;
+      case 'calibrate':
+        return <CalibratePage />;
       default:
         return <PlaceholderPage title={activePage} />;
     }
