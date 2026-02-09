@@ -4,14 +4,14 @@ import {
   Cell,
   Tooltip,
   ResponsiveContainer,
-  Legend
-} from 'recharts';
+  Legend,
+} from "recharts";
 
 interface IncrementalityChartProps {
-  data: any[];
+  data: Array<{ name: string; value: number }>;
 }
 
-const COLORS = ['#871F1E', '#ED1B24', '#F58726', '#FACC00'];
+const COLORS = ["#871F1E", "#ED1B24", "#F58726", "#FACC00"];
 
 export const IncrementalityChart = ({ data }: IncrementalityChartProps) => {
   return (
@@ -33,11 +33,14 @@ export const IncrementalityChart = ({ data }: IncrementalityChartProps) => {
             dataKey="value"
           >
             {data.map((_, index) => (
-              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+              <Cell
+                key={`cell-${index}`}
+                fill={COLORS[index % COLORS.length]}
+              />
             ))}
           </Pie>
           <Tooltip />
-          <Legend verticalAlign="bottom" height={36}/>
+          <Legend verticalAlign="bottom" height={36} />
         </PieChart>
       </ResponsiveContainer>
     </div>

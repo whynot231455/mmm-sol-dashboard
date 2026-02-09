@@ -13,7 +13,7 @@ export const useValidateData = () => {
         const dateMap = new Map<string, { date: Date; actual: number; predicted: number }>();
 
         rawData.forEach(row => {
-            const dateStr = row[mapping.date!];
+            const dateStr = row[mapping.date!] as string | undefined;
             if (!dateStr) return;
             const date = new Date(dateStr);
             if (isNaN(date.getTime())) return;
@@ -33,13 +33,22 @@ export const useValidateData = () => {
             entry.actual += revenue;
         });
 
+        // Deterministic seeded helper to avoid impure Math.random calls during render
+        const seeded = (key: string) => {
+            let h = 2166136261 >>> 0;
+            for (let i = 0; i < key.length; i++) {
+                h = Math.imul(h ^ key.charCodeAt(i), 16777619) >>> 0;
+            }
+            return (h % 10000) / 10000;
+        };
+
         // Generate mock predictions (in real scenario, this would come from trained model)
         const chartData = Array.from(dateMap.values())
             .sort((a, b) => a.date.getTime() - b.date.getTime())
             .map(d => ({
                 ...d,
-                // Mock prediction with some noise (±5%)
-                predicted: d.actual * (0.95 + Math.random() * 0.1)
+                // Mock prediction with some noise (±5%) using deterministic seed
+                predicted: d.actual * (0.95 + seeded(d.date.toISOString()) * 0.1)
             }));
 
         // Calculate residuals for residual plot
@@ -78,12 +87,12 @@ export const useValidateData = () => {
         // Mock variable statistics
         const variableStats = channels.map((channel) => ({
             variable: channel,
-            coefficient: (Math.random() * 3000 - 1000).toFixed(2),
-            stdError: (Math.random() * 200).toFixed(2),
-            tStatistic: (Math.random() * 40 - 5).toFixed(2),
-            pValue: Math.random() < 0.7 ? 0.001 : Math.random() * 0.5,
-            vif: (1 + Math.random() * 3).toFixed(2),
-            confidence: Math.random() > 0.3 ? 95 : 90
+            coefficient: (seeded(channel + '_coef') * 3000 - 1000).toFixed(2),
+            stdError: (seeded(channel + '_se') * 200).toFixed(2),
+            tStatistic: (seeded(channel + '_t') * 40 - 5).toFixed(2),
+            pValue: seeded(channel + '_p') < 0.7 ? 0.001 : seeded(channel + '_p2') * 0.5,
+            vif: (1 + seeded(channel + '_v') * 3).toFixed(2),
+            confidence: seeded(channel + '_c') > 0.3 ? 95 : 90
         }));
 
         return {

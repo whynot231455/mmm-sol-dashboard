@@ -16,14 +16,14 @@ export type PageType =
     | 'train' | 'validate' | 'calibrate';
 
 interface DataState {
-    rawData: any[];
+    rawData: Record<string, unknown>[];
     headers: string[];
     mapping: ColumnMapping;
     isLoaded: boolean;
     activePage: PageType;
 
     // Actions
-    setData: (data: any[], headers: string[]) => void;
+    setData: (data: Record<string, unknown>[], headers: string[]) => void;
     setMapping: (mapping: ColumnMapping) => void;
     setActivePage: (page: PageType) => void;
     reset: () => void;

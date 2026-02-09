@@ -42,14 +42,14 @@ export const useOptimizeData = (params: OptimizationParams) => {
         // Proportional reallocation logic:
         // New Spend = (Current Share * (1 + weight)) adjusted to fit Total Budget constraint
 
-        // First, calculate raw proposed spends
-        let rawProposedTotal = 0;
+        // First, calculate raw proposed spends without mutating locals
         const proposedChannels = channels.map(ch => {
             const weight = params.channelWeights[ch.channel] || 0;
             const proposedSpend = ch.spend * (1 + weight);
-            rawProposedTotal += proposedSpend;
             return { ...ch, proposedSpend };
         });
+
+        const rawProposedTotal = proposedChannels.reduce((acc, c) => acc + c.proposedSpend, 0);
 
         // Scale to fit Total Budget
         const scaleFactor = params.totalBudget / (rawProposedTotal || 1);

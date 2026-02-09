@@ -35,20 +35,28 @@ export const useCalibrateData = () => {
         const mape = 4.2;
         const roiDelta = 12;
 
-        // Mock calibration impact data (baseline vs calibrated)
+        // Deterministic pseudo-random generator from channel string to keep render pure
+        const seeded = (key: string) => {
+            let h = 2166136261 >>> 0;
+            for (let i = 0; i < key.length; i++) {
+                h = Math.imul(h ^ key.charCodeAt(i), 16777619) >>> 0;
+            }
+            return (h % 10000) / 10000;
+        };
+
         const impactData = channels.slice(0, 6).map(channel => ({
             channel,
-            baseline: Math.random() * 100 + 50,
-            calibrated: Math.random() * 100 + 50,
-            actuals: Math.random() * 100 + 50
+            baseline: seeded(channel + '_b') * 100 + 50,
+            calibrated: seeded(channel + '_c') * 100 + 50,
+            actuals: seeded(channel + '_a') * 100 + 50
         }));
 
         // Mock coefficient changes
         const coefficientChanges = channels.slice(0, 3).map(channel => ({
             channel,
-            baselineCoeff: (Math.random() * 2 - 0.5).toFixed(2),
-            calibratedCoeff: (Math.random() * 2 - 0.5).toFixed(2),
-            impact: `${(Math.random() * 30 - 15).toFixed(1)}%`
+            baselineCoeff: (seeded(channel + '_bc') * 2 - 0.5).toFixed(2),
+            calibratedCoeff: (seeded(channel + '_cc') * 2 - 0.5).toFixed(2),
+            impact: `${(seeded(channel + '_i') * 30 - 15).toFixed(1)}%`
         }));
 
         const toggleStudy = (id: string) => {

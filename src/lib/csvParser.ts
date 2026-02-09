@@ -1,7 +1,7 @@
 import * as Papa from 'papaparse';
 
 export interface ParseResult {
-    data: any[];
+    data: Record<string, unknown>[];
     headers: string[];
     error?: string;
 }
@@ -11,7 +11,7 @@ export const parseCSV = (file: File): Promise<ParseResult> => {
         Papa.parse(file, {
             header: true,
             skipEmptyLines: true,
-            complete: (results: Papa.ParseResult<any>) => {
+            complete: (results: Papa.ParseResult<Record<string, unknown>>) => {
                 resolve({
                     data: results.data,
                     headers: results.meta.fields || [],

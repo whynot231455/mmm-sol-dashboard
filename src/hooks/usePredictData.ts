@@ -19,7 +19,7 @@ export const usePredictData = (params: SimulationParams) => {
         const historyMap = new Map<string, { date: Date, revenue: number, spend: number, channels: Record<string, number> }>();
 
         rawData.forEach(row => {
-            const dateStr = row[mapping.date!];
+            const dateStr = row[mapping.date!] as string | undefined;
             if (!dateStr) return;
             const date = new Date(dateStr);
             if (isNaN(date.getTime())) return;

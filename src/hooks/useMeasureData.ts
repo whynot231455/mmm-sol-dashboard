@@ -30,11 +30,11 @@ export const useMeasureData = (filters?: MeasureDataFilters) => {
         if (filters?.dateRange && filters.dateRange !== 'All Time') {
             const rowDates = rawData
                 .map(row => {
-                    const val = row[mapping.date!];
-                    if (!val) return null;
-                    const d = new Date(val);
-                    return isNaN(d.getTime()) ? null : d;
-                })
+                        const val = row[mapping.date!] as string | undefined;
+                        if (!val) return null;
+                        const d = new Date(val);
+                        return isNaN(d.getTime()) ? null : d;
+                    })
                 .filter((d): d is Date => d !== null);
 
             const maxDate = rowDates.length > 0
@@ -66,8 +66,8 @@ export const useMeasureData = (filters?: MeasureDataFilters) => {
         }
 
         // Extract Unique Values for Dropdowns
-        const uniqueCountries = Array.from(new Set(rawData.map(row => row[mapping.country!] as string).filter(Boolean))).sort();
-        const uniqueChannels = Array.from(new Set(rawData.map(row => row[mapping.channel!] as string).filter(Boolean))).sort();
+        const uniqueCountries = Array.from(new Set(rawData.map(row => row[mapping.country!] as string | undefined).filter(Boolean) as string[])).sort();
+        const uniqueChannels = Array.from(new Set(rawData.map(row => row[mapping.channel!] as string | undefined).filter(Boolean) as string[])).sort();
 
 
         let totalRevenue = 0;
@@ -78,8 +78,8 @@ export const useMeasureData = (filters?: MeasureDataFilters) => {
         filteredData.forEach((row) => {
             const revenue = parseFloat(String(row[mapping.revenue!] || 0).replace(/[^0-9.-]+/g, '')) || 0;
             const spend = parseFloat(String(row[mapping.spend!] || 0).replace(/[^0-9.-]+/g, '')) || 0;
-            const date = row[mapping.date!] as string;
-            const channel = (row[mapping.channel!] as string) || 'Unknown';
+            const date = row[mapping.date!] as string | undefined;
+            const channel = (row[mapping.channel!] as string | undefined) || 'Unknown';
 
             totalRevenue += revenue;
             totalSpend += spend;
