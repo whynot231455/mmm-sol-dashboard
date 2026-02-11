@@ -55,6 +55,19 @@ export interface DocSection {
     articles: DocArticle[];
 }
 
+export interface Tutorial {
+    id: string;
+    title: string;
+    duration: string;
+    thumbnail: string;
+    type: 'youtube' | 'upload';
+    status: 'Not Started' | 'In Progress' | 'Completed';
+    description: string;
+    progress: number;
+    videoUrl?: string;
+    views?: string;
+}
+
 export interface TransformSettings {
     primaryMetric: 'spend' | 'impressions' | 'clicks';
     aggregation: {
@@ -93,6 +106,7 @@ interface DataState {
     transformSettings: TransformSettings;
     isLoaded: boolean;
     activePage: PageType;
+    tutorials: Tutorial[];
 
     // Actions
     setData: (data: Record<string, unknown>[], headers: string[]) => void;
@@ -100,6 +114,9 @@ interface DataState {
     setFilter: (key: keyof Filters, value: string) => void;
     setTransformSettings: (settings: Partial<TransformSettings>) => void;
     setActivePage: (page: PageType) => void;
+    addTutorial: (tutorial: Tutorial) => void;
+    deleteTutorial: (id: string) => void;
+    updateTutorialProgress: (id: string, progress: number) => void;
     reset: () => void;
 }
 
@@ -176,6 +193,7 @@ export const useDataStore = create<DataState>()(
             },
             isLoaded: false,
             activePage: 'measure',
+            tutorials: [],
 
             setData: (data, headers) => set({
                 rawData: data,
@@ -213,6 +231,26 @@ export const useDataStore = create<DataState>()(
             })),
 
             setActivePage: (page) => set({ activePage: page }),
+
+            addTutorial: (tutorial) => set((state) => ({
+                tutorials: [tutorial, ...state.tutorials]
+            })),
+
+            deleteTutorial: (id) => set((state) => ({
+                tutorials: state.tutorials.filter(t => t.id !== id)
+            })),
+
+            updateTutorialProgress: (id, progress) => set((state) => ({
+                tutorials: state.tutorials.map(t =>
+                    t.id === id
+                        ? {
+                            ...t,
+                            progress,
+                            status: progress === 100 ? 'Completed' : progress > 0 ? 'In Progress' : 'Not Started'
+                        }
+                        : t
+                )
+            })),
 
             reset: () => set({
                 rawData: [],
@@ -253,7 +291,8 @@ export const useDataStore = create<DataState>()(
                     currency: 'USD ($)'
                 },
                 isLoaded: false,
-                activePage: 'measure'
+                activePage: 'measure',
+                tutorials: []
             }),
         }),
         {
@@ -266,6 +305,7 @@ export const useDataStore = create<DataState>()(
                 filters: state.filters,
                 transformSettings: state.transformSettings,
                 isLoaded: state.isLoaded,
+                tutorials: state.tutorials,
             }),
         }
     )
