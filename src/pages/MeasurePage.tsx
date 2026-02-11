@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { useMeasureData } from '../hooks/useMeasureData';
 import { KPICard } from '../components/KPICard';
 import { TrendChart } from '../components/TrendChart';
@@ -19,16 +18,13 @@ import { useDataStore } from '../store/useDataStore';
 import { formatSmartCurrency, formatPercent } from '../lib/formatters';
 
 export const MeasurePage = () => {
-  const [selectedCountry, setSelectedCountry] = useState('All');
-  const [selectedChannel, setSelectedChannel] = useState('All');
-  const [selectedDateRange, setSelectedDateRange] = useState('All Time');
+  const { filters: persistedFilters, setFilter, setActivePage } = useDataStore();
 
   const data = useMeasureData({
-      country: selectedCountry,
-      channel: selectedChannel,
-      dateRange: selectedDateRange
+      country: persistedFilters.country,
+      channel: persistedFilters.channel,
+      dateRange: persistedFilters.dateRange
   });
-  const { setActivePage } = useDataStore();
 
   if (!data) {
     return (
@@ -79,8 +75,8 @@ export const MeasurePage = () => {
         <div className="relative group">
             <Globe size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
             <select 
-                value={selectedCountry}
-                onChange={(e) => setSelectedCountry(e.target.value)}
+                value={persistedFilters.country}
+                onChange={(e) => setFilter('country', e.target.value)}
                 className="pl-10 pr-8 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-600 hover:border-slate-300 transition-colors appearance-none cursor-pointer outline-none focus:ring-2 focus:ring-brand-primary/10"
             >
                 {filters.countries.map(country => (
@@ -92,8 +88,8 @@ export const MeasurePage = () => {
         <div className="relative group">
             <Filter size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
             <select 
-                value={selectedChannel}
-                onChange={(e) => setSelectedChannel(e.target.value)}
+                value={persistedFilters.channel}
+                onChange={(e) => setFilter('channel', e.target.value)}
                 className="pl-10 pr-8 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-600 hover:border-slate-300 transition-colors appearance-none cursor-pointer outline-none focus:ring-2 focus:ring-brand-primary/10"
             >
                 {filters.channels.map(channel => (
@@ -105,8 +101,8 @@ export const MeasurePage = () => {
         <div className="relative group">
             <Calendar size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
             <select 
-                value={selectedDateRange}
-                onChange={(e) => setSelectedDateRange(e.target.value)}
+                value={persistedFilters.dateRange}
+                onChange={(e) => setFilter('dateRange', e.target.value)}
                 className="pl-10 pr-8 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-600 hover:border-slate-300 transition-colors appearance-none cursor-pointer outline-none focus:ring-2 focus:ring-brand-primary/10"
             >
                 <option>All Time</option>

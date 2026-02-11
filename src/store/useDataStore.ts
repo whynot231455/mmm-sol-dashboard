@@ -28,19 +28,28 @@ interface ColumnMapping {
 
 export type PageType =
     | 'measure' | 'predict' | 'optimize'
-    | 'import' | 'connect'
-    | 'train' | 'validate' | 'calibrate';
+    | 'import' | 'connect' | 'transform'
+    | 'train' | 'validate' | 'calibrate'
+    | 'video-tutorials' | 'documentation';
+
+interface Filters {
+    country: string;
+    channel: string;
+    dateRange: string;
+}
 
 interface DataState {
     rawData: Record<string, unknown>[];
     headers: string[];
     mapping: ColumnMapping;
+    filters: Filters;
     isLoaded: boolean;
     activePage: PageType;
 
     // Actions
     setData: (data: Record<string, unknown>[], headers: string[]) => void;
     setMapping: (mapping: ColumnMapping) => void;
+    setFilter: (key: keyof Filters, value: string) => void;
     setActivePage: (page: PageType) => void;
     reset: () => void;
 }
@@ -51,6 +60,11 @@ export const useDataStore = create<DataState>()(
             rawData: [],
             headers: [],
             mapping: {},
+            filters: {
+                country: 'All',
+                channel: 'All',
+                dateRange: 'All Time'
+            },
             isLoaded: false,
             activePage: 'measure',
 
@@ -62,12 +76,21 @@ export const useDataStore = create<DataState>()(
 
             setMapping: (mapping) => set({ mapping }),
 
+            setFilter: (key, value) => set((state) => ({
+                filters: { ...state.filters, [key]: value }
+            })),
+
             setActivePage: (page) => set({ activePage: page }),
 
             reset: () => set({
                 rawData: [],
                 headers: [],
                 mapping: {},
+                filters: {
+                    country: 'All',
+                    channel: 'All',
+                    dateRange: 'All Time'
+                },
                 isLoaded: false,
                 activePage: 'measure'
             }),
@@ -79,6 +102,7 @@ export const useDataStore = create<DataState>()(
                 rawData: state.rawData,
                 headers: state.headers,
                 mapping: state.mapping,
+                filters: state.filters,
                 isLoaded: state.isLoaded,
             }),
         }

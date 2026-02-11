@@ -41,6 +41,12 @@ function App() {
         return <ValidatePage />;
       case 'calibrate':
         return <CalibratePage />;
+      case 'transform':
+        return <PlaceholderPage title="Data Transformation" />;
+      case 'video-tutorials':
+        return <PlaceholderPage title="Video Tutorials" />;
+      case 'documentation':
+        return <PlaceholderPage title="Documentation" />;
       default:
         return <PlaceholderPage title={activePage} />;
     }
