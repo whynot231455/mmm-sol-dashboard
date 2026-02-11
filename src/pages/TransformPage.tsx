@@ -53,13 +53,13 @@ export const TransformPage = () => {
     const [currentStep, setCurrentStep] = useState<TransformationStep>('data-source');
     const [searchQuery, setSearchQuery] = useState('');
 
-    const steps = [
+    const steps = useMemo(() => [
         { id: 'data-source', label: 'DATA SOURCE', icon: <Database size={20} /> },
         { id: 'aggregation', label: 'AGGREGATION', icon: <Layers size={20} /> },
         { id: 'adstock', label: 'ADSTOCK', icon: <History size={20} /> },
         { id: 'saturation', label: 'SATURATION', icon: <BarChart size={20} /> },
         { id: 'final-input', label: 'FINAL INPUT', icon: <LogOut size={20} /> },
-    ];
+    ], []);
 
     // Prepare data for the chart - using first 100 points for performance
     const chartData = useMemo(() => {
@@ -138,7 +138,10 @@ export const TransformPage = () => {
         });
     }, [rawData, mapping, transformSettings?.primaryMetric, transformSettings?.saturation?.slope, transformSettings?.saturation?.inflection]);
 
-    const renderDataSourceView = () => (
+    // View components to prevent parent re-renders from affecting complex DOM
+    const DataSourceView = useMemo(() => {
+        if (currentStep !== 'data-source') return null;
+        return (
         <div className="space-y-6">
             {/* Chart Card */}
             <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
@@ -248,9 +251,12 @@ export const TransformPage = () => {
                 </div>
             </div>
         </div>
-    );
+        );
+    }, [currentStep, chartData, transformSettings?.primaryMetric, rawData, mapping.date, mapping.channel, mapping.spend]);
 
-    const renderAggregationView = () => (
+    const AggregationView = useMemo(() => {
+        if (currentStep !== 'aggregation') return null;
+        return (
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 h-full">
             <div className="flex items-center gap-4 mb-8">
                 <div className="flex items-center gap-2">
@@ -320,9 +326,12 @@ export const TransformPage = () => {
                 </ResponsiveContainer>
             </div>
         </div>
-    );
+        );
+    }, [currentStep, aggregationData]);
 
-    const renderAdstockView = () => (
+    const AdstockView = useMemo(() => {
+        if (currentStep !== 'adstock') return null;
+        return (
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 h-full relative overflow-hidden">
             <div className="flex items-center gap-4 mb-8">
                 <div className="flex items-center gap-2">
@@ -376,9 +385,12 @@ export const TransformPage = () => {
                 </ResponsiveContainer>
             </div>
         </div>
-    );
+        );
+    }, [currentStep, adstockData, transformSettings?.metrics, transformSettings?.primaryMetric]);
 
-    const renderSaturationView = () => (
+    const SaturationView = useMemo(() => {
+        if (currentStep !== 'saturation') return null;
+        return (
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 h-full relative">
             <div className="flex items-center gap-4 mb-8">
                 <div className="flex items-center gap-2">
@@ -460,7 +472,8 @@ export const TransformPage = () => {
                 </ResponsiveContainer>
             </div>
         </div>
-    );
+        );
+    }, [currentStep, saturationData, transformSettings?.saturation, transformSettings?.metrics, setTransformSettings]);
 
     return (
         <div className="flex flex-col h-full animate-in slide-in-from-bottom-2 duration-500">
@@ -528,10 +541,10 @@ export const TransformPage = () => {
             <div className="grid grid-cols-12 gap-8 items-start">
                 {/* Visualizer Column */}
                 <div className="col-span-12 lg:col-span-9">
-                    {currentStep === 'data-source' && renderDataSourceView()}
-                    {currentStep === 'aggregation' && renderAggregationView()}
-                    {currentStep === 'adstock' && renderAdstockView()}
-                    {currentStep === 'saturation' && renderSaturationView()}
+                    {currentStep === 'data-source' && DataSourceView}
+                    {currentStep === 'aggregation' && AggregationView}
+                    {currentStep === 'adstock' && AdstockView}
+                    {currentStep === 'saturation' && SaturationView}
                     
                     {/* Placeholder for other steps */}
                     {['final-input'].includes(currentStep) && (

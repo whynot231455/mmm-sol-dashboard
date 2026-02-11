@@ -190,7 +190,26 @@ export const useDataStore = create<DataState>()(
             })),
 
             setTransformSettings: (settings) => set((state) => ({
-                transformSettings: { ...state.transformSettings, ...settings }
+                transformSettings: {
+                    ...state.transformSettings,
+                    ...settings,
+                    // Handle nested objects to avoid overwriting them entirely if not provided
+                    aggregation: settings.aggregation
+                        ? { ...state.transformSettings.aggregation, ...settings.aggregation }
+                        : state.transformSettings.aggregation,
+                    adstock: settings.adstock
+                        ? { ...state.transformSettings.adstock, ...settings.adstock }
+                        : state.transformSettings.adstock,
+                    saturation: settings.saturation
+                        ? { ...state.transformSettings.saturation, ...settings.saturation }
+                        : state.transformSettings.saturation,
+                    metrics: settings.metrics
+                        ? { ...state.transformSettings.metrics, ...settings.metrics }
+                        : state.transformSettings.metrics,
+                    dateRange: settings.dateRange
+                        ? { ...state.transformSettings.dateRange, ...settings.dateRange }
+                        : state.transformSettings.dateRange,
+                }
             })),
 
             setActivePage: (page) => set({ activePage: page }),
@@ -245,7 +264,6 @@ export const useDataStore = create<DataState>()(
                 headers: state.headers,
                 mapping: state.mapping,
                 filters: state.filters,
-                documentation: state.documentation,
                 transformSettings: state.transformSettings,
                 isLoaded: state.isLoaded,
             }),

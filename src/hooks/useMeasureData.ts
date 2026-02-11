@@ -10,6 +10,27 @@ interface MeasureDataFilters {
 export const useMeasureData = (filters?: MeasureDataFilters) => {
     const { rawData, mapping } = useDataStore();
 
+    // Extract Unique Values for Dropdowns - only compute when rawData or mapping changes
+    const availableFilters = useMemo(() => {
+        if (!rawData.length || !mapping.country || !mapping.channel) {
+            return { countries: ['All'], channels: ['All'] };
+        }
+        const countries = new Set<string>();
+        const channels = new Set<string>();
+
+        rawData.forEach(row => {
+            const country = row[mapping.country!] as string | undefined;
+            const channel = row[mapping.channel!] as string | undefined;
+            if (country) countries.add(country);
+            if (channel) channels.add(channel);
+        });
+
+        return {
+            countries: ['All', ...Array.from(countries).sort()],
+            channels: ['All', ...Array.from(channels).sort()]
+        };
+    }, [rawData, mapping.country, mapping.channel]);
+
     const metrics = useMemo(() => {
         if (!rawData.length || !mapping.revenue || !mapping.spend || !mapping.date) {
             return null;
@@ -28,19 +49,17 @@ export const useMeasureData = (filters?: MeasureDataFilters) => {
 
         // Date Filtering
         if (filters?.dateRange && filters.dateRange !== 'All Time') {
-            const rowDates = rawData
-                .map(row => {
-                        const val = row[mapping.date!] as string | undefined;
-                        if (!val) return null;
-                        const d = new Date(val);
-                        return isNaN(d.getTime()) ? null : d;
-                    })
-                .filter((d): d is Date => d !== null);
+            // Find max date more efficiently (one-pass)
+            let maxTime = 0;
+            rawData.forEach(row => {
+                const val = row[mapping.date!] as string | undefined;
+                if (val) {
+                    const d = new Date(val).getTime();
+                    if (!isNaN(d) && d > maxTime) maxTime = d;
+                }
+            });
 
-            const maxDate = rowDates.length > 0
-                ? new Date(rowDates.map(d => d.getTime()).reduce((a, b) => Math.max(a, b)))
-                : new Date();
-
+            const maxDate = maxTime > 0 ? new Date(maxTime) : new Date();
             let minDate: Date | null = null;
 
             if (filters.dateRange === 'Last 30 Days') {
@@ -52,22 +71,19 @@ export const useMeasureData = (filters?: MeasureDataFilters) => {
             }
 
             if (minDate) {
-                // Adjust minDate to start of day and maxDate to end of day to be inclusive
                 minDate.setHours(0, 0, 0, 0);
-                maxDate.setHours(23, 59, 59, 999);
+                const minTime = minDate.getTime();
+                const maxTimeVal = maxDate.setHours(23, 59, 59, 999);
 
                 filteredData = filteredData.filter(row => {
                     const val = row[mapping.date!] as string | undefined;
                     if (!val) return false;
-                    const rowDate = new Date(val);
-                    return !isNaN(rowDate.getTime()) && rowDate >= minDate! && rowDate <= maxDate;
+                    const rowTime = new Date(val).getTime();
+                    return !isNaN(rowTime) && rowTime >= minTime && rowTime <= maxTimeVal;
                 });
             }
         }
 
-        // Extract Unique Values for Dropdowns
-        const uniqueCountries = Array.from(new Set(rawData.map(row => row[mapping.country!] as string | undefined).filter(Boolean) as string[])).sort();
-        const uniqueChannels = Array.from(new Set(rawData.map(row => row[mapping.channel!] as string | undefined).filter(Boolean) as string[])).sort();
 
 
         let totalRevenue = 0;
@@ -114,10 +130,7 @@ export const useMeasureData = (filters?: MeasureDataFilters) => {
             },
             trend: Object.values(trendData).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()),
             channels: Object.values(channelData).sort((a, b) => b.revenue - a.revenue),
-            filters: {
-                countries: ['All', ...uniqueCountries],
-                channels: ['All', ...uniqueChannels]
-            }
+            filters: availableFilters
         };
     }, [rawData, mapping, filters]);
 
