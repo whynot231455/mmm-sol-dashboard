@@ -7,6 +7,7 @@ import { OptimizePage } from './pages/OptimizePage';
 import { TrainPage } from './pages/TrainPage';
 import { ValidatePage } from './pages/ValidatePage';
 import { CalibratePage } from './pages/CalibratePage';
+import { VideoTutorialsPage } from './pages/VideoTutorialsPage';
 import { useDataStore } from './store/useDataStore';
 
 const PlaceholderPage = ({ title }: { title: string }) => (
@@ -44,7 +45,7 @@ function App() {
       case 'transform':
         return <PlaceholderPage title="Data Transformation" />;
       case 'video-tutorials':
-        return <PlaceholderPage title="Video Tutorials" />;
+        return <VideoTutorialsPage />;
       case 'documentation':
         return <PlaceholderPage title="Documentation" />;
       default:
