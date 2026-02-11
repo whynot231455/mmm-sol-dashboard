@@ -8,6 +8,7 @@ import { TrainPage } from './pages/TrainPage';
 import { ValidatePage } from './pages/ValidatePage';
 import { CalibratePage } from './pages/CalibratePage';
 import { DocumentationPage } from './pages/DocumentationPage';
+import { TransformPage } from './pages/TransformPage';
 import { useDataStore } from './store/useDataStore';
 
 const PlaceholderPage = ({ title }: { title: string }) => (
@@ -43,7 +44,7 @@ function App() {
       case 'calibrate':
         return <CalibratePage />;
       case 'transform':
-        return <PlaceholderPage title="Data Transformation" />;
+        return <TransformPage />;
       case 'video-tutorials':
         return <PlaceholderPage title="Video Tutorials" />;
       case 'documentation':

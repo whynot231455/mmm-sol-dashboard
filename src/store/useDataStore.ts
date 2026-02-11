@@ -55,12 +55,42 @@ export interface DocSection {
     articles: DocArticle[];
 }
 
+export interface TransformSettings {
+    primaryMetric: 'spend' | 'impressions' | 'clicks';
+    aggregation: {
+        granularity: 'daily' | 'weekly' | 'monthly';
+        method: 'sum' | 'avg' | 'max';
+        weekStarting: 'monday' | 'sunday';
+    };
+    adstock: {
+        type: 'geometric';
+        decayRate: number;
+    };
+    saturation: {
+        active: boolean;
+        curveType: 'hill' | 's-curve' | 'power';
+        slope: number;
+        inflection: number;
+    };
+    metrics: {
+        r2: number;
+        vif: number;
+        rss: string;
+    };
+    dateRange: {
+        start: string;
+        end: string;
+    };
+    currency: string;
+}
+
 interface DataState {
     rawData: Record<string, unknown>[];
     headers: string[];
     mapping: ColumnMapping;
     filters: Filters;
     documentation: DocSection[];
+    transformSettings: TransformSettings;
     isLoaded: boolean;
     activePage: PageType;
 
@@ -68,6 +98,7 @@ interface DataState {
     setData: (data: Record<string, unknown>[], headers: string[]) => void;
     setMapping: (mapping: ColumnMapping) => void;
     setFilter: (key: keyof Filters, value: string) => void;
+    setTransformSettings: (settings: Partial<TransformSettings>) => void;
     setActivePage: (page: PageType) => void;
     reset: () => void;
 }
@@ -115,6 +146,34 @@ export const useDataStore = create<DataState>()(
                 dateRange: 'All Time'
             },
             documentation: initialDocumentation,
+            transformSettings: {
+                primaryMetric: 'spend',
+                aggregation: {
+                    granularity: 'weekly',
+                    method: 'sum',
+                    weekStarting: 'monday'
+                },
+                adstock: {
+                    type: 'geometric',
+                    decayRate: 0.65
+                },
+                saturation: {
+                    active: true,
+                    curveType: 'hill',
+                    slope: 1.42,
+                    inflection: 0.50
+                },
+                metrics: {
+                    r2: 0.942,
+                    vif: 1.8,
+                    rss: '12.4K'
+                },
+                dateRange: {
+                    start: '2023-01-01',
+                    end: '2024-01-01'
+                },
+                currency: 'USD ($)'
+            },
             isLoaded: false,
             activePage: 'measure',
 
@@ -130,6 +189,10 @@ export const useDataStore = create<DataState>()(
                 filters: { ...state.filters, [key]: value }
             })),
 
+            setTransformSettings: (settings) => set((state) => ({
+                transformSettings: { ...state.transformSettings, ...settings }
+            })),
+
             setActivePage: (page) => set({ activePage: page }),
 
             reset: () => set({
@@ -142,6 +205,34 @@ export const useDataStore = create<DataState>()(
                     dateRange: 'All Time'
                 },
                 documentation: [],
+                transformSettings: {
+                    primaryMetric: 'spend',
+                    aggregation: {
+                        granularity: 'weekly',
+                        method: 'sum',
+                        weekStarting: 'monday'
+                    },
+                    adstock: {
+                        type: 'geometric',
+                        decayRate: 0.65
+                    },
+                    saturation: {
+                        active: true,
+                        curveType: 'hill',
+                        slope: 1.42,
+                        inflection: 0.50
+                    },
+                    metrics: {
+                        r2: 0.942,
+                        vif: 1.8,
+                        rss: '12.4K'
+                    },
+                    dateRange: {
+                        start: '2023-01-01',
+                        end: '2024-01-01'
+                    },
+                    currency: 'USD ($)'
+                },
                 isLoaded: false,
                 activePage: 'measure'
             }),
@@ -155,6 +246,7 @@ export const useDataStore = create<DataState>()(
                 mapping: state.mapping,
                 filters: state.filters,
                 documentation: state.documentation,
+                transformSettings: state.transformSettings,
                 isLoaded: state.isLoaded,
             }),
         }
