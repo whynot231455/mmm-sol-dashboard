@@ -105,7 +105,6 @@ export const MeasurePage = () => {
                 onChange={(e) => setFilter('dateRange', e.target.value)}
                 className="pl-10 pr-8 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-600 hover:border-slate-300 transition-colors appearance-none cursor-pointer outline-none focus:ring-2 focus:ring-brand-primary/10"
             >
-                <option>All Time</option>
                 <option>Last 30 Days</option>
                 <option>Last 90 Days</option>
             </select>
