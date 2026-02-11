@@ -1,5 +1,21 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import type { StateStorage } from 'zustand/middleware';
+import { get, set as idbSet, del } from 'idb-keyval';
+
+// Custom storage for Zustand persistence using IndexedDB (via idb-keyval)
+// This enables storing large datasets that exceed localStorage's ~5MB limit.
+const storage: StateStorage = {
+    getItem: async (name: string): Promise<string | null> => {
+        return (await get(name)) || null;
+    },
+    setItem: async (name: string, value: string): Promise<void> => {
+        await idbSet(name, value);
+    },
+    removeItem: async (name: string): Promise<void> => {
+        await del(name);
+    },
+};
 
 interface ColumnMapping {
     date?: string;
@@ -57,7 +73,8 @@ export const useDataStore = create<DataState>()(
             }),
         }),
         {
-            name: 'mmm-dashboard-storage', // localStorage key
+            name: 'mmm-dashboard-storage', // Key for IndexedDB
+            storage: createJSONStorage(() => storage),
             partialize: (state) => ({
                 rawData: state.rawData,
                 headers: state.headers,

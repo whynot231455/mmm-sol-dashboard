@@ -12,6 +12,7 @@
   "dependencies": {
     "@tailwindcss/vite": "^4.1.18",
     "clsx": "^2.1.1",
+    "idb-keyval": "^6.2.2",
     "lucide-react": "^0.563.0",
     "papaparse": "^5.5.3",
     "react": "^19.2.0",
