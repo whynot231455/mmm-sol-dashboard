@@ -23,8 +23,11 @@ export const TrendChart = ({ data }: TrendChartProps) => {
         </h3>
         <p className="text-slate-500 text-sm">Performance over time</p>
       </div>
-      <ResponsiveContainer width="100%" height="100%">
-        <ComposedChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 20 }}>
+      <ResponsiveContainer width="100%" height="90%">
+        <ComposedChart
+          data={data}
+          margin={{ top: 10, right: 10, left: 0, bottom: 20 }}
+        >
           <CartesianGrid
             strokeDasharray="3 3"
             vertical={false}
@@ -68,7 +71,7 @@ export const TrendChart = ({ data }: TrendChartProps) => {
             yAxisId="left"
             dataKey="spend"
             barSize={20}
-            fill="#e2e8f0"
+            fill="#878585"
             radius={[4, 4, 0, 0]}
             name="Spend"
           />

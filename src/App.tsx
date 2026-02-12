@@ -1,24 +1,25 @@
-import { Layout } from './components/Layout';
-import { ImportPage } from './pages/ImportPage';
-import { ConnectPage } from './pages/ConnectPage';
-import { MeasurePage } from './pages/MeasurePage';
-import { PredictPage } from './pages/PredictPage';
-import { OptimizePage } from './pages/OptimizePage';
-import { TrainPage } from './pages/TrainPage';
-import { ValidatePage } from './pages/ValidatePage';
-import { CalibratePage } from './pages/CalibratePage';
-import { DocumentationPage } from './pages/DocumentationPage';
-import { TransformPage } from './pages/TransformPage';
-import { VideoTutorialsPage } from './pages/VideoTutorialsPage';
-import { useDataStore } from './store/useDataStore';
+import { Layout } from "./components/Layout";
+import { ImportPage } from "./pages/ImportPage";
+import { ConnectPage } from "./pages/ConnectPage";
+import { MeasurePage } from "./pages/MeasurePage";
+import { PredictPage } from "./pages/PredictPage";
+import { OptimizePage } from "./pages/OptimizePage";
+import { TrainPage } from "./pages/TrainPage";
+import { ValidatePage } from "./pages/ValidatePage";
+import { CalibratePage } from "./pages/CalibratePage";
+import { DocumentationPage } from "./pages/DocumentationPage";
+import { TransformPage } from "./pages/TransformPage";
+import { VideoTutorialsPage } from "./pages/VideoTutorialsPage";
+import { useDataStore } from "./store/useDataStore";
 
 const PlaceholderPage = ({ title }: { title: string }) => (
   <div className="bg-white p-12 rounded-2xl shadow-sm border border-slate-100 max-w-4xl mx-auto text-center space-y-6 mt-12">
     <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight capitalize">
-      {title} <span className="text-indigo-600">Page</span>
+      {title} Page
     </h1>
     <p className="text-slate-600 text-lg">
-      This page is under construction. Please provide the design to continue the implementation.
+      This page is under construction. Please provide the design to continue the
+      implementation.
     </p>
   </div>
 );
@@ -28,38 +29,34 @@ function App() {
 
   const renderPage = () => {
     switch (activePage) {
-      case 'import':
+      case "import":
         return <ImportPage />;
-      case 'connect':
+      case "connect":
         return <ConnectPage />;
-      case 'measure':
+      case "measure":
         return <MeasurePage />;
-      case 'predict':
+      case "predict":
         return <PredictPage />;
-      case 'optimize':
+      case "optimize":
         return <OptimizePage />;
-      case 'train':
+      case "train":
         return <TrainPage />;
-      case 'validate':
+      case "validate":
         return <ValidatePage />;
-      case 'calibrate':
+      case "calibrate":
         return <CalibratePage />;
-      case 'transform':
+      case "transform":
         return <TransformPage />;
-      case 'video-tutorials':
+      case "video-tutorials":
         return <VideoTutorialsPage />;
-      case 'documentation':
+      case "documentation":
         return <DocumentationPage />;
       default:
         return <PlaceholderPage title={activePage} />;
     }
   };
 
-  return (
-    <Layout>
-      {renderPage()}
-    </Layout>
-  )
+  return <Layout>{renderPage()}</Layout>;
 }
 
-export default App
+export default App;
