@@ -1,73 +1,86 @@
-# React + TypeScript + Vite
+# MMM Dashboard | Sol Analytics
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+![MMM Dashboard Banner](docs/screenshots/measure.png)
 
-Currently, two official plugins are available:
+## Overview
+Welcome to the **MMM Dashboard | Sol Analytics**, a comprehensive Marketing Mix Modeling (MMM) solution designed specifically for marketing managers. Our platform empowers you to make data-driven decisions by quantifying the impact of your marketing channels on revenue, optimizing budget allocations, and forecasting future performance with precision.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+Sol Analytics bridges the gap between complex statistical modeling and actionable marketing insights, providing a user-friendly interface to manage the entire MMM lifecycle.
 
-## React Compiler
+---
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Key Features
 
-## Expanding the ESLint configuration
+### 📊 Performance Measurement
+*   **Omnichannel Tracking:** Get a unified view of ROI and ROAS across all your marketing channels (Facebook, Google, etc.).
+*   **Contribution Analysis:** Understand exactly how much each channel contributes to your total revenue.
+*   **Incrementality Insights:** Distinguish between organic growth and paid lift with advanced incrementality charts.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### 📈 Predictive Forecasting
+*   **What-If Analysis:** Simulate various spend scenarios to see how they impact your future revenue and ROI.
+*   **Trend Analysis:** Visualize predicted performance trends over time to plan your marketing calendar effectively.
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+### ⚖️ Budget Optimization
+*   **Smart Reallocation:** Use our optimization engine to find the most efficient way to distribute your budget for maximum impact.
+*   **Impact Simulation:** Adjust sliders for each channel to see real-time updates on projected revenue and CPA.
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+### 🛠️ Data & Model Management
+*   **Seamless Import:** Easily upload your marketing data via CSV with automatic schema detection and validation.
+*   **Advanced Transformations:** Apply Adstock (decay) and Saturation (diminishing returns) transformations to accurately reflect marketing dynamics.
+*   **Model Calibration:** Calibrate your models using lift studies and experimental data for increased accuracy.
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+---
+
+## Screenshots
+
+### Executive Dashboard (Measure)
+Track your high-level KPIs and channel performance at a glance.
+![Measure Page](docs/screenshots/measure.png)
+
+### Budget Optimizer
+Find the perfect balance for your marketing spend.
+![Optimize Page](docs/screenshots/optimize.png)
+
+### Model Training & Transformation
+Configure advanced statistical parameters without writing a single line of code.
+![Transform Page](docs/screenshots/transform.png)
+
+---
+
+## Getting Started
+
+### Prerequisites
+*   [Node.js](https://nodejs.org/) (v18 or higher)
+*   npm or yarn
+
+### Installation
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/your-username/mmm-dashboard.git
+   cd mmm-dashboard
+   ```
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+### Running the Dashboard
+Start the development server:
+```bash
+npm run dev
 ```
+Open your browser and navigate to `http://localhost:5173`.
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+---
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Technologies Used
+*   **Frontend:** React 19, TypeScript, Vite
+*   **Styling:** Tailwind CSS
+*   **Charts:** Recharts
+*   **State Management:** Zustand with IndexedDB persistence
+*   **Icons:** Lucide React
+*   **Data Parsing:** PapaParse
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+---
+
+© 2024 Sol Analytics. All rights reserved.
