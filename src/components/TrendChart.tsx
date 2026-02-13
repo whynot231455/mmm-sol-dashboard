@@ -8,20 +8,30 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import { TrendingUp } from "lucide-react";
 import { formatSmartCurrency } from "../lib/formatters";
 
 interface TrendChartProps {
   data: Array<{ date: string | Date; spend: number; revenue: number }>;
+  onExpand?: () => void;
 }
 
-export const TrendChart = ({ data }: TrendChartProps) => {
+export const TrendChart = ({ data, onExpand }: TrendChartProps) => {
   return (
-    <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm h-[400px]">
-      <div className="mb-6">
-        <h3 className="text-lg font-bold text-slate-900">
-          Spend vs Revenue Trend
-        </h3>
-        <p className="text-slate-500 text-sm">Performance over time</p>
+    <div 
+      className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm h-[400px] group cursor-pointer hover:border-brand-primary/20 transition-all active:scale-[0.99]"
+      onClick={onExpand}
+    >
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h3 className="text-lg font-bold text-slate-900">
+            Spend vs Revenue Trend
+          </h3>
+          <p className="text-slate-500 text-sm">Performance over time</p>
+        </div>
+        <div className="p-2 rounded-lg bg-slate-50 text-slate-400 group-hover:bg-brand-primary/10 group-hover:text-brand-primary transition-colors">
+            <TrendingUp size={18} />
+        </div>
       </div>
       <ResponsiveContainer width="100%" height="90%">
         <ComposedChart
@@ -70,16 +80,16 @@ export const TrendChart = ({ data }: TrendChartProps) => {
           />
           <Bar
             yAxisId="left"
-            dataKey="revenue"
+            dataKey="spend"
             barSize={20}
             fill="#bcbabaff"
             radius={[4, 4, 0, 0]}
-            name="Spend"
+            name="Marketing Spend"
           />
           <Line
             yAxisId="right"
             type="monotone"
-            dataKey="spend"
+            dataKey="revenue"
             stroke="#871F1E"
             strokeWidth={3}
             dot={false}

@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import { useMeasureData } from '../hooks/useMeasureData';
 import { KPICard } from '../components/KPICard';
 import { TrendChart } from '../components/TrendChart';
+import { DetailedTrendView } from '../components/DetailedTrendView';
 import { IncrementalityChart } from '../components/IncrementalityChart';
 import { ChannelContribution } from '../components/ChannelContribution';
 import { 
@@ -19,6 +21,7 @@ import { formatSmartCurrency, formatPercent } from '../lib/formatters';
 
 export const MeasurePage = () => {
   const { filters: persistedFilters, setFilter, setActivePage } = useDataStore();
+  const [isExpanded, setIsExpanded] = useState(false);
 
   const data = useMeasureData({
       country: persistedFilters.country,
@@ -45,6 +48,10 @@ export const MeasurePage = () => {
   }
 
   const { kpi, trend, channels, filters } = data;
+
+  if (isExpanded) {
+    return <DetailedTrendView onBack={() => setIsExpanded(false)} />;
+  }
 
   // Placeholder data for incrementality until we have advanced logic
   const incrementalityData = [
@@ -146,7 +153,10 @@ export const MeasurePage = () => {
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
-          <TrendChart data={trend} />
+          <TrendChart 
+            data={trend} 
+            onExpand={() => setIsExpanded(true)}
+          />
         </div>
         <div>
           <IncrementalityChart data={incrementalityData} />
