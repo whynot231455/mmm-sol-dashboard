@@ -83,4 +83,4 @@ Open your browser and navigate to `http://localhost:5173`.
 
 ---
 
-© 2024 Sol Analytics. All rights reserved.
+© 2026 Sol Analytics. All rights reserved.
