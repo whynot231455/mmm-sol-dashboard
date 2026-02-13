@@ -57,8 +57,9 @@ export const TrendChart = ({ data }: TrendChartProps) => {
             tickFormatter={(value) => formatSmartCurrency(value)}
           />
           <Tooltip
-            formatter={(value: number | string | undefined) => [
-              formatSmartCurrency(Number(value || 0)),
+            formatter={(value: number, name: string) => [
+              formatSmartCurrency(value),
+              name,
             ]}
             contentStyle={{
               backgroundColor: "#fff",
@@ -69,16 +70,16 @@ export const TrendChart = ({ data }: TrendChartProps) => {
           />
           <Bar
             yAxisId="left"
-            dataKey="spend"
+            dataKey="revenue"
             barSize={20}
-            fill="#878585"
+            fill="#bcbabaff"
             radius={[4, 4, 0, 0]}
             name="Spend"
           />
           <Line
             yAxisId="right"
             type="monotone"
-            dataKey="revenue"
+            dataKey="spend"
             stroke="#871F1E"
             strokeWidth={3}
             dot={false}

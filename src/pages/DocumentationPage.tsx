@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { 
     Search, 
     Home, 
@@ -10,7 +10,7 @@ import {
     Info,
     ChevronDown
 } from 'lucide-react';
-import { useDataStore, type DocArticle, type DocSection } from '../store/useDataStore';
+import { useDataStore } from '../store/useDataStore';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -22,7 +22,7 @@ export const DocumentationPage = () => {
     const { documentation = [] } = useDataStore();
     const [searchQuery, setSearchQuery] = useState('');
     const [activeSectionId, setActiveSectionId] = useState(documentation[0]?.id || '');
-    const [activeArticleId, setActiveArticleId] = useState(documentation[0]?.articles[0]?.id || '');
+    const [activeArticleId] = useState(documentation[0]?.articles[0]?.id || '');
 
     const activeSection = documentation.find(s => s.id === activeSectionId) || documentation[0];
     const activeArticle = activeSection?.articles.find(a => a.id === activeArticleId) || activeSection?.articles[0];

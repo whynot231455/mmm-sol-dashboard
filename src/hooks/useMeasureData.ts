@@ -132,7 +132,7 @@ export const useMeasureData = (filters?: MeasureDataFilters) => {
             channels: Object.values(channelData).sort((a, b) => b.revenue - a.revenue),
             filters: availableFilters
         };
-    }, [rawData, mapping, filters]);
+    }, [rawData, mapping, filters, availableFilters]);
 
     return metrics;
 };

@@ -1,9 +1,8 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { 
     Search, 
     Maximize2, 
     Download, 
-    ChevronRight, 
     Play, 
     Database, 
     Layers, 
@@ -12,13 +11,10 @@ import {
     LogOut,
     CheckCircle2,
     Calendar,
-    DollarSign,
     RefreshCcw,
     Info,
     ChevronDown,
-    TrendingUp,
-    Zap,
-    Scale
+    Zap
 } from 'lucide-react';
 import { 
     ResponsiveContainer, 
@@ -29,10 +25,9 @@ import {
     YAxis, 
     CartesianGrid, 
     Tooltip, 
-    Legend,
     Area
 } from 'recharts';
-import { useDataStore, type PageType } from '../store/useDataStore';
+import { useDataStore } from '../store/useDataStore';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -51,7 +46,6 @@ export const TransformPage = () => {
     } = useDataStore();
     
     const [currentStep, setCurrentStep] = useState<TransformationStep>('data-source');
-    const [searchQuery, setSearchQuery] = useState('');
 
     const steps = useMemo(() => [
         { id: 'data-source', label: 'DATA SOURCE', icon: <Database size={20} /> },
@@ -184,6 +178,10 @@ export const TransformPage = () => {
                             <Tooltip 
                                 contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
                                 labelStyle={{ fontWeight: 700, color: '#1e293b' }}
+                                formatter={(value: number | string | undefined) => {
+                                    if (value === undefined) return ['', transformSettings?.primaryMetric ?? 'Value'];
+                                    return [`$${Number(value).toLocaleString()}`, transformSettings?.primaryMetric ?? 'Value'];
+                                }}
                             />
                             <Bar 
                                 dataKey="value" 
@@ -307,7 +305,14 @@ export const TransformPage = () => {
                             tick={{ fill: '#94a3b8', fontWeight: 600 }}
                         />
                         <YAxis hide />
-                        <Tooltip />
+                        <Tooltip 
+                            contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                            labelStyle={{ fontWeight: 700, color: '#1e293b' }}
+                            formatter={(value: number | string | undefined, name: string) => {
+                                if (value === undefined) return ['', name === 'raw' ? 'Raw Daily Data' : 'Aggregated Result'];
+                                return [`$${Number(value).toLocaleString()}`, name === 'raw' ? 'Raw Daily Data' : 'Aggregated Result'];
+                            }}
+                        />
                         <Bar 
                             dataKey="raw" 
                             fill="#f1f5f9" 
@@ -368,6 +373,14 @@ export const TransformPage = () => {
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f8fafc" />
                         <XAxis dataKey="name" hide />
                         <YAxis hide />
+                        <Tooltip 
+                            contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                            labelStyle={{ fontWeight: 700, color: '#1e293b' }}
+                            formatter={(value: number | string | undefined, name: string) => {
+                                if (value === undefined) return ['', name === 'raw' ? 'Raw Spend' : 'Adstock Decay'];
+                                return [`$${Number(value).toLocaleString()}`, name === 'raw' ? 'Raw Spend' : 'Adstock Decay'];
+                            }}
+                        />
                         <Bar 
                             dataKey="raw" 
                             fill="#f1f5f9" 
@@ -405,7 +418,7 @@ export const TransformPage = () => {
                     {['Hill', 'S-Curve', 'Power'].map(curve => (
                         <button 
                             key={curve}
-                                onClick={() => setTransformSettings({ saturation: { ...(transformSettings?.saturation || { active: true, curveType: 'hill', slope: 1.42, inflection: 0.5 }), curveType: curve.toLowerCase() as any } })}
+                                onClick={() => setTransformSettings({ saturation: { ...(transformSettings?.saturation || { active: true, curveType: 'hill', slope: 1.42, inflection: 0.5 }), curveType: curve.toLowerCase() as 'hill' | 's-curve' | 'power' } })}
                                 className={cn(
                                     "px-4 py-1.5 text-[10px] font-bold rounded-lg transition-all",
                                     transformSettings?.saturation?.curveType === curve.toLowerCase() ? "bg-white text-slate-900 shadow-sm" : "text-slate-400"
@@ -447,6 +460,17 @@ export const TransformPage = () => {
                         <CartesianGrid strokeDasharray="2 2" stroke="#f1f5f9" />
                         <XAxis dataKey="x" hide />
                         <YAxis hide />
+                        <Tooltip 
+                            contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                            labelStyle={{ fontWeight: 700, color: '#1e293b' }}
+                            formatter={(value: number | string | undefined, name: string) => {
+                                if (value === undefined) return ['', name === 'curve' ? 'Response Curve' : 'Observed Spend'];
+                                return [
+                                    name === 'curve' ? `${(Number(value) * 100).toFixed(1)}%` : `$${Number(value).toLocaleString()}`, 
+                                    name === 'curve' ? 'Response Curve' : 'Observed Spend'
+                                ];
+                            }}
+                        />
                         <Bar 
                             dataKey="spend" 
                             fill="#cbd5e1" 
@@ -473,7 +497,7 @@ export const TransformPage = () => {
             </div>
         </div>
         );
-    }, [currentStep, saturationData, transformSettings?.saturation, transformSettings?.metrics, setTransformSettings]);
+    }, [currentStep, saturationData, transformSettings?.saturation, setTransformSettings]);
 
     return (
         <div className="flex flex-col h-full animate-in slide-in-from-bottom-2 duration-500">
@@ -588,7 +612,7 @@ export const TransformPage = () => {
                                                     return (
                                                         <button 
                                                             key={metric.id}
-                                                            onClick={() => setTransformSettings({ primaryMetric: metric.id as any })}
+                                                            onClick={() => setTransformSettings({ primaryMetric: metric.id as 'spend' | 'impressions' | 'clicks' })}
                                                             className={cn(
                                                                 "w-full flex items-center gap-4 px-4 py-4 rounded-xl border text-left transition-all group relative",
                                                                 isSelected 
@@ -821,7 +845,7 @@ export const TransformPage = () => {
                                                 {['daily', 'weekly', 'monthly'].map(gran => (
                                                     <button 
                                                         key={gran}
-                                                        onClick={() => setTransformSettings({ aggregation: { ...(transformSettings?.aggregation || { granularity: 'weekly', method: 'sum', weekStarting: 'monday' }), granularity: gran as any } })}
+                                                        onClick={() => setTransformSettings({ aggregation: { ...(transformSettings?.aggregation || { granularity: 'weekly', method: 'sum', weekStarting: 'monday' }), granularity: gran as 'daily' | 'weekly' | 'monthly' } })}
                                                         className={cn(
                                                             "py-1.5 text-[10px] font-black rounded-lg transition-all capitalize",
                                                             transformSettings?.aggregation?.granularity === gran 
@@ -848,7 +872,7 @@ export const TransformPage = () => {
                                                     return (
                                                         <button 
                                                             key={method.id}
-                                                            onClick={() => setTransformSettings({ aggregation: { ...(transformSettings?.aggregation || { granularity: 'weekly', method: 'sum', weekStarting: 'monday' }), method: method.id as any } })}
+                                                            onClick={() => setTransformSettings({ aggregation: { ...(transformSettings?.aggregation || { granularity: 'weekly', method: 'sum', weekStarting: 'monday' }), method: method.id as 'sum' | 'avg' | 'max' } })}
                                                             className={cn(
                                                                 "w-full flex items-center justify-between px-4 py-3 rounded-xl border transition-all group",
                                                                 isSelected 
@@ -881,7 +905,7 @@ export const TransformPage = () => {
                                                     return (
                                                         <button 
                                                             key={day}
-                                                        onClick={() => setTransformSettings({ aggregation: { ...(transformSettings?.aggregation || { granularity: 'weekly', method: 'sum', weekStarting: 'monday' }), weekStarting: day as any } })}
+                                                        onClick={() => setTransformSettings({ aggregation: { ...(transformSettings?.aggregation || { granularity: 'weekly', method: 'sum', weekStarting: 'monday' }), weekStarting: day as 'monday' | 'sunday' } })}
                                                             className={cn(
                                                                 "py-2 px-4 rounded-xl border text-[10px] font-extrabold transition-all capitalize",
                                                                 isSelected 

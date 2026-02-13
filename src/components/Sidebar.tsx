@@ -106,6 +106,11 @@ export const Sidebar = () => {
           alt="Sol Analytics" 
           className="h-22 w-auto object-contain"
         />
+        <div className="mt-1 px-1 text-center">
+          <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
+            MMM Dashboard
+          </span>
+        </div>
       </div>
 
       {/* Navigation */}

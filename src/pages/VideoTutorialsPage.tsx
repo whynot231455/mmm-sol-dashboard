@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import {
   Search,
   Link as LinkIcon,
@@ -22,7 +22,7 @@ function cn(...inputs: ClassValue[]) {
 }
 
 export const VideoTutorialsPage = () => {
-  const { tutorials, addTutorial, updateTutorialProgress, deleteTutorial } =
+  const { tutorials, addTutorial, deleteTutorial } =
     useDataStore();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTopic, setSelectedTopic] = useState("All");
