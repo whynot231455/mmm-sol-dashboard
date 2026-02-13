@@ -12,7 +12,7 @@ export const Layout = ({ children, activePage }: LayoutProps) => {
   const isFullWidth = activePage && isFullWidthArgs.includes(activePage);
 
   return (
-    <div className="flex h-screen bg-slate-50 overflow-hidden">
+    <div className="flex h-screen bg-brand-bg overflow-hidden">
       <Sidebar />
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {isFullWidth ? (

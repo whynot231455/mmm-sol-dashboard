@@ -12,7 +12,7 @@ export const CalibratePage = () => {
 
   if (!data) {
     return (
-      <div className="min-h-screen bg-slate-50 p-8 flex items-center justify-center">
+      <div className="flex items-center justify-center py-24">
         <div className="text-center">
           <h2 className="text-xl font-bold text-slate-900 mb-2">No Data Available</h2>
           <p className="text-slate-500">Please upload CSV data first to calibrate the model.</p>
@@ -34,8 +34,7 @@ export const CalibratePage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 p-8">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <div className="space-y-6">
         {/* Header */}
         <div className="flex items-start justify-between">
           <div>
@@ -113,7 +112,6 @@ export const CalibratePage = () => {
             onReset={handleReset}
           />
         </div>
-      </div>
     </div>
   );
 };
