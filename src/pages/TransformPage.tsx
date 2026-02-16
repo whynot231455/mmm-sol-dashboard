@@ -47,6 +47,27 @@ export const TransformPage = () => {
     
     const [currentStep, setCurrentStep] = useState<TransformationStep>('data-source');
 
+    // Centralized filtering logic
+    const filteredData = useMemo(() => {
+        if (!rawData || rawData.length === 0) return [];
+        
+        const source = transformSettings?.dataSource || 'All Sources';
+        const { start, end } = transformSettings?.dateRange || {};
+        const channelKey = mapping?.channel || 'Channel';
+        const dateKey = mapping?.date || 'Date';
+        
+        return rawData.filter(row => {
+            // Filter by Data Source
+            const matchesSource = source === 'All Sources' || String(row[channelKey]) === source;
+            
+            // Filter by Date Range
+            const rowDate = String(row[dateKey]);
+            const matchesDate = (!start || rowDate >= start) && (!end || rowDate <= end);
+            
+            return matchesSource && matchesDate;
+        });
+    }, [rawData, transformSettings?.dataSource, transformSettings?.dateRange, mapping?.channel, mapping?.date]);
+
     const steps = useMemo(() => [
         { id: 'data-source', label: 'DATA SOURCE', icon: <Database size={20} /> },
         { id: 'aggregation', label: 'AGGREGATION', icon: <Layers size={20} /> },
@@ -57,26 +78,26 @@ export const TransformPage = () => {
 
     // Prepare data for the chart - using first 100 points for performance
     const chartData = useMemo(() => {
-        if (!rawData || rawData.length === 0) return [];
+        if (!filteredData || filteredData.length === 0) return [];
         
         const metric = mapping?.[transformSettings?.primaryMetric] || transformSettings?.primaryMetric || 'spend';
         const dateKey = mapping?.date || 'Date';
         
-        return rawData.slice(0, 100).map((row, idx) => ({
+        return filteredData.slice(0, 100).map((row, idx) => ({
             name: row[dateKey] || `Point ${idx}`,
             value: Number(row[metric]) || 0,
         }));
-    }, [rawData, mapping, transformSettings?.primaryMetric]);
+    }, [filteredData, mapping, transformSettings?.primaryMetric]);
 
     // Data for aggregation preview
     const aggregationData = useMemo(() => {
-        if (!rawData || rawData.length === 0) return [];
+        if (!filteredData || filteredData.length === 0) return [];
         
         const metric = mapping?.[transformSettings?.primaryMetric] || transformSettings?.primaryMetric || 'spend';
         const dateKey = mapping?.date || 'Date';
         
         // Simple mock of aggregation for visualization
-        return rawData.slice(0, 50).map((row, idx) => {
+        return filteredData.slice(0, 50).map((row, idx) => {
             const raw = Number(row[metric]) || 0;
             return {
                 name: row[dateKey] || `Point ${idx}`,
@@ -88,14 +109,14 @@ export const TransformPage = () => {
 
     // Data for Adstock preview
     const adstockData = useMemo(() => {
-        if (!rawData || rawData.length === 0) return [];
+        if (!filteredData || filteredData.length === 0) return [];
         
         const metric = mapping?.[transformSettings?.primaryMetric] || transformSettings?.primaryMetric || 'spend';
         const dateKey = mapping?.date || 'Date';
         const decay = transformSettings?.adstock?.decayRate ?? 0.65;
         
         let adstockedValue = 0;
-        return rawData.slice(0, 50).map((row, idx) => {
+        return filteredData.slice(0, 50).map((row, idx) => {
             const raw = Number(row[metric]) || 0;
             adstockedValue = raw + (adstockedValue * decay);
             return {
@@ -104,11 +125,11 @@ export const TransformPage = () => {
                 adstock: adstockedValue / 2, // Scaled for visualization
             };
         });
-    }, [rawData, mapping, transformSettings?.primaryMetric, transformSettings?.adstock?.decayRate]);
+    }, [filteredData, mapping, transformSettings?.primaryMetric, transformSettings?.adstock?.decayRate]);
 
     // Data for Saturation preview
     const saturationData = useMemo(() => {
-        if (!rawData || rawData.length === 0) return [];
+        if (!filteredData || filteredData.length === 0) return [];
         
         const metric = mapping?.[transformSettings?.primaryMetric] || transformSettings?.primaryMetric || 'spend';
         const slope = transformSettings?.saturation?.slope ?? 1.42;
@@ -126,11 +147,11 @@ export const TransformPage = () => {
             const x = idx / 40;
             return {
                 x: x,
-                spend: idx < (rawData?.length || 0) ? Number(rawData[idx]?.[metric]) / 100000 : null,
+                spend: idx < (filteredData?.length || 0) ? Number(filteredData[idx]?.[metric]) / 100000 : null,
                 curve: hill(x),
             };
         });
-    }, [rawData, mapping, transformSettings?.primaryMetric, transformSettings?.saturation?.slope, transformSettings?.saturation?.inflection]);
+    }, [filteredData, mapping, transformSettings?.primaryMetric, transformSettings?.saturation?.slope, transformSettings?.saturation?.inflection]);
 
     // View components to prevent parent re-renders from affecting complex DOM
     const DataSourceView = useMemo(() => {
@@ -177,10 +198,12 @@ export const TransformPage = () => {
                             />
                             <Tooltip 
                                 contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
-                                labelStyle={{ fontWeight: 700, color: '#1e293b' }}
+                                labelStyle={{ fontWeight: 800, color: '#0f172a', marginBottom: '4px' }}
+                                itemStyle={{ color: '#1e293b', fontWeight: 600, textTransform: 'capitalize' }}
                                 formatter={(value: number | string | undefined) => {
-                                    if (value === undefined) return ['', transformSettings?.primaryMetric ?? 'Value'];
-                                    return [`$${Number(value).toLocaleString()}`, transformSettings?.primaryMetric ?? 'Value'];
+                                    if (value === undefined) return ['', transformSettings?.primaryMetric === 'spend' ? 'Spend' : transformSettings?.primaryMetric === 'impressions' ? 'Impressions' : 'Clicks'];
+                                    const label = transformSettings?.primaryMetric === 'spend' ? 'Spend' : transformSettings?.primaryMetric === 'impressions' ? 'Impressions' : 'Clicks';
+                                    return [`$${Number(value).toLocaleString()}`, label];
                                 }}
                             />
                             <Bar 
@@ -188,6 +211,7 @@ export const TransformPage = () => {
                                 fill="#871F1E10" 
                                 radius={[4, 4, 0, 0]}
                                 barSize={12}
+                                tooltipType="none"
                             />
                             <Line 
                                 type="monotone" 
@@ -225,7 +249,7 @@ export const TransformPage = () => {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-50">
-                            {rawData.slice(0, 10).map((row, idx) => (
+                            {filteredData.slice(0, 10).map((row, idx) => (
                                 <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
                                     <td className="px-6 py-4 text-xs font-semibold text-slate-600">
                                         {String(row[mapping.date || 'Date'] || '2023-01-01')}
@@ -250,7 +274,7 @@ export const TransformPage = () => {
             </div>
         </div>
         );
-    }, [currentStep, chartData, transformSettings?.primaryMetric, rawData, mapping.date, mapping.channel, mapping.spend]);
+    }, [currentStep, chartData, transformSettings?.primaryMetric, filteredData, mapping.date, mapping.channel, mapping.spend]);
 
     const AggregationView = useMemo(() => {
         if (currentStep !== 'aggregation') return null;
@@ -307,10 +331,12 @@ export const TransformPage = () => {
                         <YAxis hide />
                         <Tooltip 
                             contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
-                            labelStyle={{ fontWeight: 700, color: '#1e293b' }}
+                            labelStyle={{ fontWeight: 800, color: '#0f172a', marginBottom: '4px' }}
+                            itemStyle={{ color: '#1e293b', fontWeight: 600 }}
                             formatter={(value: number | string | undefined, name: string) => {
-                                if (value === undefined) return ['', name === 'raw' ? 'Raw Daily Data' : 'Aggregated Result'];
-                                return [`$${Number(value).toLocaleString()}`, name === 'raw' ? 'Raw Daily Data' : 'Aggregated Result'];
+                                const displayName = name === 'raw' ? 'Daily Data' : 'Aggregated Result';
+                                if (value === undefined) return ['', displayName];
+                                return [`$${Number(value).toLocaleString()}`, displayName];
                             }}
                         />
                         <Bar 
@@ -375,10 +401,12 @@ export const TransformPage = () => {
                         <YAxis hide />
                         <Tooltip 
                             contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
-                            labelStyle={{ fontWeight: 700, color: '#1e293b' }}
+                            labelStyle={{ fontWeight: 800, color: '#0f172a', marginBottom: '4px' }}
+                            itemStyle={{ color: '#1e293b', fontWeight: 600 }}
                             formatter={(value: number | string | undefined, name: string) => {
-                                if (value === undefined) return ['', name === 'raw' ? 'Raw Spend' : 'Adstock Decay'];
-                                return [`$${Number(value).toLocaleString()}`, name === 'raw' ? 'Raw Spend' : 'Adstock Decay'];
+                                const displayName = name === 'raw' ? 'Raw Spend' : 'Adstock Decay';
+                                if (value === undefined) return ['', displayName];
+                                return [`$${Number(value).toLocaleString()}`, displayName];
                             }}
                         />
                         <Bar 
@@ -462,12 +490,14 @@ export const TransformPage = () => {
                         <YAxis hide />
                         <Tooltip 
                             contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
-                            labelStyle={{ fontWeight: 700, color: '#1e293b' }}
+                            labelStyle={{ fontWeight: 800, color: '#0f172a', marginBottom: '4px' }}
+                            itemStyle={{ color: '#1e293b', fontWeight: 600 }}
                             formatter={(value: number | string | undefined, name: string) => {
-                                if (value === undefined) return ['', name === 'curve' ? 'Response Curve' : 'Observed Spend'];
+                                const displayName = name === 'curve' ? 'Response Curve' : 'Observed Spend';
+                                if (value === undefined) return ['', displayName];
                                 return [
                                     name === 'curve' ? `${(Number(value) * 100).toFixed(1)}%` : `$${Number(value).toLocaleString()}`, 
-                                    name === 'curve' ? 'Response Curve' : 'Observed Spend'
+                                    displayName
                                 ];
                             }}
                         />
@@ -646,23 +676,35 @@ export const TransformPage = () => {
                                                 <div className="space-y-1.5">
                                                     <label className="text-[10px] font-bold text-slate-500 uppercase">Date Range</label>
                                                     <div className="flex gap-2">
-                                                        <div className="flex-1 relative">
+                                                        <div 
+                                                            className="flex-1 relative cursor-pointer"
+                                                            onClick={(e) => {
+                                                                const input = e.currentTarget.querySelector('input');
+                                                                if (input) (input as any).showPicker?.();
+                                                            }}
+                                                        >
                                                             <input 
-                                                                type="text" 
-                                                                className="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700 focus:border-[#871F1E] outline-none"
+                                                                type="date" 
+                                                                className="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700 focus:border-[#871F1E] outline-none cursor-pointer"
                                                                 value={transformSettings?.dateRange?.start ?? ''}
-                                                                readOnly
+                                                                onChange={(e) => setTransformSettings({ dateRange: { ...transformSettings.dateRange, start: e.target.value } })}
                                                             />
-                                                            <Calendar size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                                                            <Calendar size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                                                         </div>
-                                                        <div className="flex-1 relative">
+                                                        <div 
+                                                            className="flex-1 relative cursor-pointer"
+                                                            onClick={(e) => {
+                                                                const input = e.currentTarget.querySelector('input');
+                                                                if (input) (input as any).showPicker?.();
+                                                            }}
+                                                        >
                                                             <input 
-                                                                type="text" 
-                                                                className="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700 focus:border-[#871F1E] outline-none"
+                                                                type="date" 
+                                                                className="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700 focus:border-[#871F1E] outline-none cursor-pointer"
                                                                 value={transformSettings?.dateRange?.end ?? ''}
-                                                                readOnly
+                                                                onChange={(e) => setTransformSettings({ dateRange: { ...transformSettings.dateRange, end: e.target.value } })}
                                                             />
-                                                            <Calendar size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                                                            <Calendar size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                                                         </div>
                                                     </div>
                                                 </div>
@@ -677,6 +719,28 @@ export const TransformPage = () => {
                                                             <option>USD ($)</option>
                                                             <option>EUR (€)</option>
                                                             <option>GBP (£)</option>
+                                                        </select>
+                                                        <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                                                    </div>
+                                                </div>
+
+                                                {/* Data Source Dropdown */}
+                                                <div className="space-y-1.5">
+                                                    <label className="text-[10px] font-bold text-slate-500 uppercase">Data Source</label>
+                                                    <div className="relative">
+                                                        <select 
+                                                            className="w-full appearance-none px-4 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700 focus:border-[#871F1E] outline-none cursor-pointer"
+                                                            value={transformSettings?.dataSource ?? 'All Sources'}
+                                                            onChange={(e) => setTransformSettings({ dataSource: e.target.value })}
+                                                        >
+                                                            <option>All Sources</option>
+                                                            {Array.from(new Set(rawData.map(row => String(row[mapping.channel || 'Channel'] || 'Unknown'))))
+                                                                .filter(Boolean)
+                                                                .sort()
+                                                                .map(source => (
+                                                                    <option key={source} value={source}>{source}</option>
+                                                                ))
+                                                            }
                                                         </select>
                                                         <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
                                                     </div>

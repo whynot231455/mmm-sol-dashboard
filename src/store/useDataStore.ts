@@ -95,6 +95,7 @@ export interface TransformSettings {
         end: string;
     };
     currency: string;
+    dataSource: string;
 }
 
 interface DataState {
@@ -189,7 +190,8 @@ export const useDataStore = create<DataState>()(
                     start: '2023-01-01',
                     end: '2024-01-01'
                 },
-                currency: 'USD ($)'
+                currency: 'USD ($)',
+                dataSource: 'All Sources'
             },
             isLoaded: false,
             activePage: 'measure',
@@ -288,7 +290,8 @@ export const useDataStore = create<DataState>()(
                         start: '2023-01-01',
                         end: '2024-01-01'
                     },
-                    currency: 'USD ($)'
+                    currency: 'USD ($)',
+                    dataSource: 'All Sources'
                 },
                 isLoaded: false,
                 activePage: 'measure',
