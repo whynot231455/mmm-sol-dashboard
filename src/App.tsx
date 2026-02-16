@@ -10,6 +10,8 @@ import { CalibratePage } from "./pages/CalibratePage";
 import { DocumentationPage } from "./pages/DocumentationPage";
 import { TransformPage } from "./pages/TransformPage";
 import { VideoTutorialsPage } from "./pages/VideoTutorialsPage";
+import { LoginPage } from "./pages/LoginPage";
+import { SignUpPage } from "./pages/SignUpPage";
 import { useDataStore } from "./store/useDataStore";
 
 const PlaceholderPage = ({ title }: { title: string }) => (
@@ -29,6 +31,10 @@ function App() {
 
   const renderPage = () => {
     switch (activePage) {
+      case "login":
+        return <LoginPage />;
+      case "signup":
+        return <SignUpPage />;
       case "import":
         return <ImportPage />;
       case "connect":
@@ -55,6 +61,11 @@ function App() {
         return <PlaceholderPage title={activePage} />;
     }
   };
+
+  // If we are on the login or signup page, don't show the sidebar layout
+  if (activePage === 'login' || activePage === 'signup') {
+    return activePage === 'login' ? <LoginPage /> : <SignUpPage />;
+  }
 
   return <Layout>{renderPage()}</Layout>;
 }

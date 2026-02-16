@@ -134,16 +134,25 @@ export const Sidebar = () => {
       </div>
 
       {/* User Profile Footer */}
-      <div className="p-4 border-t border-slate-100">
+      <div className="p-4 border-t border-slate-100 space-y-3">
         <div className="flex items-center gap-3 px-2">
-          <div className="w-8 h-8 bg-slate-200 rounded-full flex items-center justify-center">
-            <span className="text-xs font-bold text-slate-600">JD</span>
+          <div className="w-8 h-8 bg-slate-200 rounded-full flex items-center justify-center overflow-hidden">
+            <img src="https://i.pravatar.cc/100?img=32" alt="Jane Doe" className="w-full h-full object-cover" />
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-slate-900 truncate">Jane Doe</p>
             <p className="text-xs text-slate-500 truncate">Data Scientist</p>
           </div>
         </div>
+        <button 
+          onClick={() => setActivePage('login')}
+          className="w-full flex items-center gap-3 px-4 py-2 text-xs font-black text-slate-500 hover:text-brand-primary hover:bg-brand-primary/5 rounded-xl transition-all uppercase tracking-widest"
+        >
+          <div className="flex-shrink-0">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+          </div>
+          Logout
+        </button>
       </div>
     </div>
   );

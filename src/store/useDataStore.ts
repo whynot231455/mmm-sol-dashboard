@@ -27,7 +27,7 @@ interface ColumnMapping {
 }
 
 export type PageType =
-    | 'measure' | 'predict' | 'optimize'
+    | 'login' | 'signup' | 'measure' | 'predict' | 'optimize'
     | 'import' | 'connect' | 'transform'
     | 'train' | 'validate' | 'calibrate'
     | 'video-tutorials' | 'documentation';
@@ -194,7 +194,7 @@ export const useDataStore = create<DataState>()(
                 dataSource: 'All Sources'
             },
             isLoaded: false,
-            activePage: 'measure',
+            activePage: 'login',
             tutorials: [],
 
             setData: (data, headers) => set({
@@ -294,7 +294,7 @@ export const useDataStore = create<DataState>()(
                     dataSource: 'All Sources'
                 },
                 isLoaded: false,
-                activePage: 'measure',
+                activePage: 'login',
                 tutorials: []
             }),
         }),
