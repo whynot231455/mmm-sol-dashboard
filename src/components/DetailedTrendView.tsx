@@ -281,7 +281,7 @@ export const DetailedTrendView = ({ onBack }: DetailedTrendViewProps) => {
                                     boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
                                     padding: '12px'
                                 }}
-                                formatter={(value: number | undefined, name: string) => [
+                                formatter={(value: number | undefined, name: string | undefined) => [
                                     <span className="font-bold text-slate-900">{formatValue(value || 0)}</span>,
                                     <span className="text-slate-500 font-medium">{name}</span>
                                 ]}

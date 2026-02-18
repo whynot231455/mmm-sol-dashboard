@@ -67,9 +67,9 @@ export const TrendChart = ({ data, onExpand }: TrendChartProps) => {
             tickFormatter={(value) => formatSmartCurrency(value)}
           />
           <Tooltip
-            formatter={(value: number, name: string) => [
-              formatSmartCurrency(value),
-              name,
+            formatter={(value: number | undefined, name: string | undefined) => [
+              formatSmartCurrency(value ?? 0),
+              name ?? '',
             ]}
             contentStyle={{
               backgroundColor: "#fff",
