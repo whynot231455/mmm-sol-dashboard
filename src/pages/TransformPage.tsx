@@ -8,14 +8,12 @@ import {
     History, 
     BarChart, 
     LogOut,
-    CheckCircle2,
     Calendar,
     RefreshCcw,
     Info,
     ChevronDown,
     Zap,
-    Sliders,
-    Settings2
+    Sliders
 } from 'lucide-react';
 import { 
     ResponsiveContainer, 
@@ -347,10 +345,10 @@ export const TransformPage = () => {
                                 contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)' }}
                                 labelStyle={{ fontWeight: 800, color: '#0f172a', marginBottom: '8px' }}
                                 itemStyle={{ fontWeight: 600, fontSize: '11px' }}
-                                formatter={(value: number, name: string) => {
-                                    if (name === 'price') return [`$${value.toFixed(2)}`, 'Avg Price'];
-                                    if (name === 'volume') return [Math.round(value).toLocaleString(), 'Volume'];
-                                    return [value, name];
+                                formatter={(value: number | undefined, name: string | undefined) => {
+                                    if (name === 'price') return [`$${Number(value ?? 0).toFixed(2)}`, 'Avg Price' as const];
+                                    if (name === 'volume') return [Math.round(Number(value ?? 0)).toLocaleString(), 'Volume' as const];
+                                    return [value ?? '', name ?? ''];
                                 }}
                             />
                             
@@ -468,8 +466,8 @@ export const TransformPage = () => {
                             contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
                             labelStyle={{ fontWeight: 800, color: '#0f172a', marginBottom: '4px' }}
                             itemStyle={{ color: '#1e293b', fontWeight: 600 }}
-                            formatter={(value: number | string | undefined, name: string) => {
-                                const displayName = name === 'raw' ? 'Raw Spend' : 'Adstock Decay';
+                            formatter={(value: number | string | undefined, name: string | undefined) => {
+                                const displayName = (name === 'raw' ? 'Raw Spend' : 'Adstock Decay') as 'Raw Spend' | 'Adstock Decay';
                                 if (value === undefined) return ['', displayName];
                                 return [`$${Number(value).toLocaleString()}`, displayName];
                             }}
@@ -557,11 +555,11 @@ export const TransformPage = () => {
                             contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
                             labelStyle={{ fontWeight: 800, color: '#0f172a', marginBottom: '4px' }}
                             itemStyle={{ color: '#1e293b', fontWeight: 600 }}
-                            formatter={(value: number | string | undefined, name: string) => {
-                                const displayName = name === 'curve' ? 'Response Curve' : 'Observed Spend';
+                            formatter={(value: number | string | undefined, name: string | undefined) => {
+                                const displayName = (name === 'curve' ? 'Response Curve' : 'Observed Spend') as 'Response Curve' | 'Observed Spend';
                                 if (value === undefined) return ['', displayName];
                                 return [
-                                    name === 'curve' ? `${(Number(value) * 100).toFixed(1)}%` : `$${Number(value).toLocaleString()}`, 
+                                    name === 'curve' ? `${(Number(value) * 100).toFixed(1)}%` : `$${Number(value).toLocaleString()}`,
                                     displayName
                                 ];
                             }}
