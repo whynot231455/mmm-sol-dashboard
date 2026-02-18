@@ -96,6 +96,19 @@ export interface TransformSettings {
     };
     currency: string;
     dataSource: string;
+    controlVariables: {
+        baseMetrics: {
+            priceVariable: string;
+            volumeVariable: string;
+        };
+        promotions: {
+            enabled: boolean;
+            sensitivity: 'low' | 'high' | 'medium';
+        };
+        timeEffects: {
+            priceChangeLag: number;
+        };
+    };
 }
 
 interface DataState {
@@ -191,7 +204,20 @@ export const useDataStore = create<DataState>()(
                     end: '2024-01-01'
                 },
                 currency: 'USD ($)',
-                dataSource: 'All Sources'
+                dataSource: 'All Sources',
+                controlVariables: {
+                    baseMetrics: {
+                        priceVariable: 'Average Unit Price',
+                        volumeVariable: 'Units Sold'
+                    },
+                    promotions: {
+                        enabled: true,
+                        sensitivity: 'high'
+                    },
+                    timeEffects: {
+                        priceChangeLag: 2
+                    }
+                }
             },
             isLoaded: false,
             activePage: 'login',
@@ -229,6 +255,21 @@ export const useDataStore = create<DataState>()(
                     dateRange: settings.dateRange
                         ? { ...state.transformSettings.dateRange, ...settings.dateRange }
                         : state.transformSettings.dateRange,
+                    controlVariables: settings.controlVariables
+                        ? {
+                            ...state.transformSettings.controlVariables,
+                            ...settings.controlVariables,
+                            baseMetrics: settings.controlVariables.baseMetrics
+                                ? { ...state.transformSettings.controlVariables.baseMetrics, ...settings.controlVariables.baseMetrics }
+                                : state.transformSettings.controlVariables.baseMetrics,
+                            promotions: settings.controlVariables.promotions
+                                ? { ...state.transformSettings.controlVariables.promotions, ...settings.controlVariables.promotions }
+                                : state.transformSettings.controlVariables.promotions,
+                            timeEffects: settings.controlVariables.timeEffects
+                                ? { ...state.transformSettings.controlVariables.timeEffects, ...settings.controlVariables.timeEffects }
+                                : state.transformSettings.controlVariables.timeEffects,
+                        }
+                        : state.transformSettings.controlVariables,
                 }
             })),
 
@@ -291,7 +332,20 @@ export const useDataStore = create<DataState>()(
                         end: '2024-01-01'
                     },
                     currency: 'USD ($)',
-                    dataSource: 'All Sources'
+                    dataSource: 'All Sources',
+                    controlVariables: {
+                        baseMetrics: {
+                            priceVariable: 'Average Unit Price',
+                            volumeVariable: 'Units Sold'
+                        },
+                        promotions: {
+                            enabled: true,
+                            sensitivity: 'high'
+                        },
+                        timeEffects: {
+                            priceChangeLag: 2
+                        }
+                    }
                 },
                 isLoaded: false,
                 activePage: 'login',

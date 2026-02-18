@@ -5,7 +5,6 @@ import {
     Download, 
     Play, 
     Database, 
-    Layers, 
     History, 
     BarChart, 
     LogOut,
@@ -14,7 +13,9 @@ import {
     RefreshCcw,
     Info,
     ChevronDown,
-    Zap
+    Zap,
+    Sliders,
+    Settings2
 } from 'lucide-react';
 import { 
     ResponsiveContainer, 
@@ -35,7 +36,7 @@ function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-type TransformationStep = 'data-source' | 'aggregation' | 'adstock' | 'saturation' | 'final-input';
+type TransformationStep = 'data-source' | 'adstock' | 'saturation' | 'control-variable' | 'final-input';
 
 export const TransformPage = () => {
     const { 
@@ -70,8 +71,8 @@ export const TransformPage = () => {
 
     const steps = useMemo(() => [
         { id: 'data-source', label: 'DATA SOURCE', icon: <Database size={20} /> },
-        { id: 'aggregation', label: 'AGGREGATION', icon: <Layers size={20} /> },
         { id: 'adstock', label: 'ADSTOCK', icon: <History size={20} /> },
+        { id: 'control-variable', label: 'CONTROL VAR', icon: <Sliders size={20} /> },
         { id: 'saturation', label: 'SATURATION', icon: <BarChart size={20} /> },
         { id: 'final-input', label: 'FINAL INPUT', icon: <LogOut size={20} /> },
     ], []);
@@ -89,23 +90,34 @@ export const TransformPage = () => {
         }));
     }, [filteredData, mapping, transformSettings?.primaryMetric]);
 
-    // Data for aggregation preview
-    const aggregationData = useMemo(() => {
+    // Data for Control Variable preview
+    const controlVariableData = useMemo(() => {
         if (!filteredData || filteredData.length === 0) return [];
         
-        const metric = mapping?.[transformSettings?.primaryMetric] || transformSettings?.primaryMetric || 'spend';
         const dateKey = mapping?.date || 'Date';
         
-        // Simple mock of aggregation for visualization
         return filteredData.slice(0, 50).map((row, idx) => {
-            const raw = Number(row[metric]) || 0;
+            // Mocking Price vs Volume with Elasticity
+            // Base Price around $50, Volume around 1000 units
+            // Inverse relationship: Price up -> Volume down
+            const basePrice = 50 + Math.sin(idx / 5) * 10;
+            const seasonalEffect = Math.cos(idx / 8) * 5;
+            const discount = (idx === 15 || idx === 35) ? 15 : 0; // Black Friday / Summer Sale
+            
+            const finalPrice = basePrice + seasonalEffect - discount;
+            const elasticity = -1.8;
+            const volumeChange = ((finalPrice - 50) / 50) * elasticity;
+            const volume = 1000 * (1 + volumeChange) + Math.random() * 50;
+
             return {
-                name: row[dateKey] || `Point ${idx}`,
-                raw: raw,
-                aggregated: idx % 7 === 0 ? raw * 1.5 : null, // Mock weekly sum
+                name: row[dateKey] || `Week ${idx}`,
+                price: finalPrice,
+                volume: volume,
+                isDiscount: discount > 0,
+                annotation: idx === 15 ? 'Black Friday' : idx === 35 ? 'Summer Sale' : null
             };
         });
-    }, [rawData, mapping, transformSettings?.primaryMetric]);
+    }, [filteredData, mapping]);
 
     // Data for Adstock preview
     const adstockData = useMemo(() => {
@@ -276,89 +288,142 @@ export const TransformPage = () => {
         );
     }, [currentStep, chartData, transformSettings?.primaryMetric, filteredData, mapping.date, mapping.channel, mapping.spend]);
 
-    const AggregationView = useMemo(() => {
-        if (currentStep !== 'aggregation') return null;
+    const ControlVariableView = useMemo(() => {
+        if (currentStep !== 'control-variable') return null;
         return (
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 h-full">
-            <div className="flex items-center gap-4 mb-8">
-                <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-slate-200"></div>
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Raw Daily Data</span>
-                </div>
-                <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-[#ED1B24]"></div>
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider underline decoration-[#ED1B24] decoration-2">
-                        Aggregated Result (Weekly)
-                    </span>
-                </div>
-                <div className="ml-auto flex items-center gap-2 bg-slate-50 p-1 rounded-lg">
-                    {['1M', '6M', '1Y'].map(range => (
-                        <button 
-                            key={range}
-                            className={cn(
-                                "px-3 py-1 text-[10px] font-bold rounded-md transition-all",
-                                range === '6M' ? "bg-white text-slate-900 shadow-sm" : "text-slate-400 hover:text-slate-600"
-                            )}
-                        >
-                            {range}
-                        </button>
-                    ))}
-                </div>
-            </div>
-
-            <div className="h-[500px] w-full relative">
-                <div className="absolute top-4 left-4 z-10 flex gap-4">
-                    <div className="bg-white/80 backdrop-blur-sm border border-slate-100 rounded-xl px-4 py-2 shadow-sm">
-                        <span className="text-[9px] font-bold text-slate-400 uppercase">Agg. Value</span>
-                        <div className="text-sm font-extrabold text-[#871F1E]">$42.5k</div>
+            <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-8 h-full">
+                {/* Header / Legend */}
+                <div className="flex items-center justify-between mb-8">
+                    <div className="flex items-center gap-8">
+                        <div className="flex items-center gap-2">
+                            <div className="w-3 h-3 rounded-full border-2 border-[#871F1E] bg-white"></div>
+                            <span className="text-xs font-bold text-slate-700">Avg Product Price</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <div className="w-8 h-0.5 border-t-2 border-slate-400 border-dashed"></div>
+                            <span className="text-xs font-bold text-slate-400">Sales Volume</span>
+                        </div>
                     </div>
-                    <div className="bg-white/80 backdrop-blur-sm border border-slate-100 rounded-xl px-4 py-2 shadow-sm">
-                        <span className="text-[9px] font-bold text-slate-400 uppercase">Points</span>
-                        <div className="text-sm font-extrabold text-[#871F1E]">24</div>
+                    <div className="flex items-center gap-1 bg-slate-50 p-1.5 rounded-xl border border-slate-100">
+                        {['Weekly', 'Monthly', 'Quarterly'].map(range => (
+                            <button 
+                                key={range}
+                                className={cn(
+                                    "px-4 py-1.5 text-[10px] font-black rounded-lg transition-all",
+                                    range === 'Weekly' ? "bg-white text-slate-900 shadow-sm" : "text-slate-400 hover:text-slate-600"
+                                )}
+                            >
+                                {range}
+                            </button>
+                        ))}
                     </div>
                 </div>
 
-                <ResponsiveContainer width="100%" height="100%">
-                    <ComposedChart data={aggregationData}>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f8fafc" />
-                        <XAxis 
-                            dataKey="name" 
-                            fontSize={10} 
-                            tickLine={false} 
-                            axisLine={false}
-                            tick={{ fill: '#94a3b8', fontWeight: 600 }}
-                        />
-                        <YAxis hide />
-                        <Tooltip 
-                            contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
-                            labelStyle={{ fontWeight: 800, color: '#0f172a', marginBottom: '4px' }}
-                            itemStyle={{ color: '#1e293b', fontWeight: 600 }}
-                            formatter={(value: number | string | undefined, name: string) => {
-                                const displayName = name === 'raw' ? 'Daily Data' : 'Aggregated Result';
-                                if (value === undefined) return ['', displayName];
-                                return [`$${Number(value).toLocaleString()}`, displayName];
-                            }}
-                        />
-                        <Bar 
-                            dataKey="raw" 
-                            fill="#f1f5f9" 
-                            radius={[4, 4, 0, 0]}
-                            barSize={30}
-                        />
-                        <Line 
-                            type="stepAfter" 
-                            dataKey="aggregated" 
-                            stroke="#ED1B24" 
-                            strokeWidth={3} 
-                            connectNulls
-                            dot={false}
-                        />
-                    </ComposedChart>
-                </ResponsiveContainer>
+                <div className="h-[450px] w-full relative">
+                    <ResponsiveContainer width="100%" height="100%">
+                        <ComposedChart data={controlVariableData} margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                            <XAxis 
+                                dataKey="name" 
+                                fontSize={10} 
+                                tickLine={false} 
+                                axisLine={false}
+                                tick={{ fill: '#94a3b8', fontWeight: 600 }}
+                            />
+                            <YAxis 
+                                yAxisId="left"
+                                label={{ value: 'PRICE ($)', angle: -90, position: 'insideLeft', fontSize: 10, fill: '#94a3b8', fontWeight: 800, offset: 0 }}
+                                tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 600 }}
+                                axisLine={false}
+                                tickLine={false}
+                                domain={['auto', 'auto']}
+                            />
+                            <YAxis 
+                                yAxisId="right"
+                                orientation="right"
+                                hide
+                            />
+                            <Tooltip 
+                                contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)' }}
+                                labelStyle={{ fontWeight: 800, color: '#0f172a', marginBottom: '8px' }}
+                                itemStyle={{ fontWeight: 600, fontSize: '11px' }}
+                                formatter={(value: number, name: string) => {
+                                    if (name === 'price') return [`$${value.toFixed(2)}`, 'Avg Price'];
+                                    if (name === 'volume') return [Math.round(value).toLocaleString(), 'Volume'];
+                                    return [value, name];
+                                }}
+                            />
+                            
+                            {/* Annotations Regions (Mocked visually with ReferenceArea if needed, or stick to lines) */}
+                            
+                            <Line 
+                                yAxisId="left"
+                                type="monotone" 
+                                dataKey="price" 
+                                stroke="#871F1E" 
+                                strokeWidth={3} 
+                                dot={(props: any) => {
+                                    const { cx, cy, payload } = props;
+                                    if (payload.isDiscount) {
+                                        return (
+                                            <circle cx={cx} cy={cy} r={4} fill="#white" stroke="#871F1E" strokeWidth={2} />
+                                        );
+                                    }
+                                    return <></>;
+                                }}
+                            />
+                            <Line 
+                                yAxisId="right"
+                                type="monotone" 
+                                dataKey="volume" 
+                                stroke="#94a3b8" 
+                                strokeWidth={2} 
+                                strokeDasharray="5 5"
+                                dot={false} 
+                            />
+                        </ComposedChart>
+                    </ResponsiveContainer>
+
+                    {/* Annotation Markers */}
+                    <div className="absolute top-[30%] left-[30%] h-[40%] w-[8%] border-x border-[#F59E0B]/30 bg-[#F59E0B]/5 flex flex-col justify-center items-center gap-1 pointer-events-none">
+                        <div className="text-[9px] font-black text-[#F59E0B] -rotate-90 whitespace-nowrap">BLACK FRI</div>
+                    </div>
+                    <div className="absolute top-[30%] left-[70%] h-[40%] w-[8%] border-x border-[#F59E0B]/30 bg-[#F59E0B]/5 flex flex-col justify-center items-center gap-1 pointer-events-none">
+                        <div className="text-[9px] font-black text-[#F59E0B] -rotate-90 whitespace-nowrap">SUMMER</div>
+                    </div>
+
+                    {/* Point Annotation */}
+                    <div className="absolute top-[65%] left-[32%] flex flex-col items-center animate-in fade-in slide-in-from-bottom-2 duration-700">
+                        <div className="w-2 h-2 rounded-full border-2 border-[#871F1E] bg-white mb-1"></div>
+                        <span className="text-[9px] font-black text-[#871F1E]">Discount Applied</span>
+                    </div>
+
+                    {/* Stats Cards Overlays */}
+                    <div className="absolute top-4 right-4 bg-white border border-slate-100 shadow-xl shadow-slate-200/50 rounded-2xl p-4 w-40 space-y-3">
+                        <div>
+                            <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Price Elasticity</div>
+                            <div className="flex items-baseline gap-2">
+                                <span className="text-2xl font-black text-[#871F1E]">-1.8</span>
+                                <span className="text-[9px] font-bold text-slate-400">high sens.</span>
+                            </div>
+                        </div>
+                        <div className="h-px bg-slate-50 w-full"></div>
+                        <div>
+                            <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Avg Discount</div>
+                            <div className="flex items-baseline gap-2">
+                                <span className="text-xl font-black text-[#F59E0B]">15%</span>
+                                <span className="text-[9px] font-bold text-slate-400">active</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div className="mt-4 text-center text-[10px] font-bold text-slate-300 uppercase tracking-[0.2em]">
+                    Time (Weeks)
+                </div>
             </div>
-        </div>
         );
-    }, [currentStep, aggregationData]);
+    }, [currentStep, controlVariableData]);
 
     const AdstockView = useMemo(() => {
         if (currentStep !== 'adstock') return null;
@@ -535,12 +600,14 @@ export const TransformPage = () => {
             <div className="flex items-center justify-between mb-8">
                 <div>
                     <h1 className="text-2xl font-black text-slate-900 tracking-tight">
-                        {currentStep === 'data-source' ? 'Data Source Configuration' : 'Facebook Spend Transformation'}
+                        {currentStep === 'data-source' ? 'Data Source Configuration' : 
+                         currentStep === 'control-variable' ? 'Price Elasticity Analysis' :
+                         'Facebook Spend Transformation'}
                     </h1>
                     <p className="text-sm font-semibold text-slate-500 mt-0.5">
-                        {currentStep === 'data-source' 
-                            ? 'Configure raw inputs and metric definitions' 
-                            : 'Pipeline visualization and effects preview'}
+                        {currentStep === 'data-source' ? 'Configure raw inputs and metric definitions' :
+                         currentStep === 'control-variable' ? 'Configure pricing variables and discounts for sales impact' :
+                         'Pipeline visualization and effects preview'}
                     </p>
                 </div>
                 <div className="flex items-center gap-4">
@@ -596,9 +663,9 @@ export const TransformPage = () => {
                 {/* Visualizer Column */}
                 <div className="col-span-12 lg:col-span-9">
                     {currentStep === 'data-source' && DataSourceView}
-                    {currentStep === 'aggregation' && AggregationView}
                     {currentStep === 'adstock' && AdstockView}
                     {currentStep === 'saturation' && SaturationView}
+                    {currentStep === 'control-variable' && ControlVariableView}
                     
                     {/* Placeholder for other steps */}
                     {['final-input'].includes(currentStep) && (
@@ -708,21 +775,6 @@ export const TransformPage = () => {
                                                         </div>
                                                     </div>
                                                 </div>
-                                                <div className="space-y-1.5">
-                                                    <label className="text-[10px] font-bold text-slate-500 uppercase">Currency</label>
-                                                    <div className="relative">
-                                                        <select 
-                                                            className="w-full appearance-none px-4 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700 focus:border-[#871F1E] outline-none cursor-pointer"
-                                                            value={transformSettings?.currency ?? 'USD ($)'}
-                                                            onChange={(e) => setTransformSettings({ currency: e.target.value })}
-                                                        >
-                                                            <option>USD ($)</option>
-                                                            <option>EUR (€)</option>
-                                                            <option>GBP (£)</option>
-                                                        </select>
-                                                        <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                                                    </div>
-                                                </div>
 
                                                 {/* Data Source Dropdown */}
                                                 <div className="space-y-1.5">
@@ -744,20 +796,6 @@ export const TransformPage = () => {
                                                         </select>
                                                         <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
                                                     </div>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        {/* Data Quality */}
-                                        <div className="space-y-4">
-                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Data Quality</span>
-                                            <div className="bg-[#FACC00]/10 border border-[#FACC00]/20 rounded-xl p-4 flex gap-3">
-                                                <div className="w-8 h-8 rounded-full bg-[#FACC00] flex items-center justify-center shrink-0">
-                                                    <CheckCircle2 size={16} className="text-white" />
-                                                </div>
-                                                <div>
-                                                    <div className="text-xs font-bold text-slate-900">No Errors Found</div>
-                                                    <div className="text-[10px] font-semibold text-slate-500">0 null values in selected range.</div>
                                                 </div>
                                             </div>
                                         </div>
@@ -895,96 +933,183 @@ export const TransformPage = () => {
                                         </div>
                                     </div>
                                 );
-                            case 'aggregation':
-                            default:
-                                return (
-                                    <div className="space-y-8 animate-in fade-in duration-500">
-                                        {/* Time Aggregation */}
-                                        <div className="space-y-4">
-                                            <div className="flex items-center justify-between">
-                                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Time Aggregation</span>
-                                                <span className="px-2 py-0.5 bg-[#871F1E]/5 text-[#871F1E] text-[9px] font-black rounded uppercase">Active</span>
-                                            </div>
-                                            <div className="grid grid-cols-3 gap-1 bg-slate-100 p-1 rounded-xl">
-                                                {['daily', 'weekly', 'monthly'].map(gran => (
-                                                    <button 
-                                                        key={gran}
-                                                        onClick={() => setTransformSettings({ aggregation: { ...(transformSettings?.aggregation || { granularity: 'weekly', method: 'sum', weekStarting: 'monday' }), granularity: gran as 'daily' | 'weekly' | 'monthly' } })}
-                                                        className={cn(
-                                                            "py-1.5 text-[10px] font-black rounded-lg transition-all capitalize",
-                                                            transformSettings?.aggregation?.granularity === gran 
-                                                                ? "bg-white text-slate-900 shadow-sm" 
-                                                                : "text-slate-400 hover:text-slate-600"
-                                                        )}
-                                                    >
-                                                        {gran}
-                                                    </button>
-                                                ))}
-                                            </div>
+                            case 'control-variable':
+                            return (
+                                <div className="space-y-8 animate-in fade-in duration-500">
+                                    {/* Base Metrics */}
+                                    <div className="space-y-6">
+                                        <div className="space-y-1">
+                                            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Base Metrics</h3>
+                                            <p className="text-[10px] text-slate-400">Price and Volume source columns</p>
                                         </div>
-
-                                        {/* Aggregation Method */}
+                                        
                                         <div className="space-y-4">
-                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Aggregation Method</span>
                                             <div className="space-y-2">
-                                                {[
-                                                    { id: 'sum', label: 'Sum' },
-                                                    { id: 'avg', label: 'Average' },
-                                                    { id: 'max', label: 'Max' }
-                                                ].map(method => {
-                                                    const isSelected = transformSettings.aggregation.method === method.id;
-                                                    return (
-                                                        <button 
-                                                            key={method.id}
-                                                            onClick={() => setTransformSettings({ aggregation: { ...(transformSettings?.aggregation || { granularity: 'weekly', method: 'sum', weekStarting: 'monday' }), method: method.id as 'sum' | 'avg' | 'max' } })}
-                                                            className={cn(
-                                                                "w-full flex items-center justify-between px-4 py-3 rounded-xl border transition-all group",
-                                                                isSelected 
-                                                                    ? "bg-[#871F1E]/[0.02] border-[#871F1E] shadow-sm" 
-                                                                    : "bg-white border-slate-100 hover:border-slate-300"
-                                                            )}
-                                                        >
-                                                            <span className={cn(
-                                                                "text-xs font-bold",
-                                                                isSelected ? "text-slate-900" : "text-slate-500"
-                                                            )}>{method.label}</span>
-                                                            <div className={cn(
-                                                                "w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors",
-                                                                isSelected ? "border-[#871F1E]" : "border-slate-300 group-hover:border-slate-400"
-                                                            )}>
-                                                                {isSelected && <div className="w-2 h-2 rounded-full bg-[#871F1E]"></div>}
-                                                            </div>
-                                                        </button>
-                                                    );
-                                                })}
+                                                <label className="text-xs font-bold text-slate-700">Price Variable</label>
+                                                <div className="relative">
+                                                    <select 
+                                                        className="w-full appearance-none px-4 py-3 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:border-[#871F1E] outline-none cursor-pointer hover:border-slate-300 transition-colors"
+                                                        value={transformSettings?.controlVariables?.baseMetrics?.priceVariable ?? 'Average Unit Price'}
+                                                        onChange={(e) => setTransformSettings({ 
+                                                            controlVariables: { 
+                                                                ...(transformSettings?.controlVariables || { 
+                                                                    baseMetrics: { priceVariable: 'Average Unit Price', volumeVariable: 'Units Sold' }, 
+                                                                    promotions: { enabled: true, sensitivity: 'high' }, 
+                                                                    timeEffects: { priceChangeLag: 2 } 
+                                                                }),
+                                                                baseMetrics: {
+                                                                    ...(transformSettings?.controlVariables?.baseMetrics || { priceVariable: 'Average Unit Price', volumeVariable: 'Units Sold' }),
+                                                                    priceVariable: e.target.value
+                                                                }
+                                                            } 
+                                                        })}
+                                                    >
+                                                        <option>Average Unit Price</option>
+                                                        <option>MSRP</option>
+                                                        <option>Discounted Price</option>
+                                                    </select>
+                                                    <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                                                </div>
                                             </div>
-                                        </div>
 
-                                        {/* Week Starting */}
-                                        <div className="space-y-4">
-                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Week Starting</span>
-                                            <div className="grid grid-cols-2 gap-2">
-                                                {['monday', 'sunday'].map(day => {
-                                                    const isSelected = transformSettings?.aggregation?.weekStarting === day;
-                                                    return (
-                                                        <button 
-                                                            key={day}
-                                                        onClick={() => setTransformSettings({ aggregation: { ...(transformSettings?.aggregation || { granularity: 'weekly', method: 'sum', weekStarting: 'monday' }), weekStarting: day as 'monday' | 'sunday' } })}
-                                                            className={cn(
-                                                                "py-2 px-4 rounded-xl border text-[10px] font-extrabold transition-all capitalize",
-                                                                isSelected 
-                                                                    ? "bg-[#871F1E]/5 border-[#871F1E] text-[#871F1E]" 
-                                                                    : "bg-white border-slate-100 text-slate-500 hover:border-slate-300"
-                                                            )}
-                                                        >
-                                                            {day}
-                                                        </button>
-                                                    );
-                                                })}
+                                            <div className="space-y-2">
+                                                <label className="text-xs font-bold text-slate-700">Volume Variable</label>
+                                                <div className="relative">
+                                                    <select 
+                                                        className="w-full appearance-none px-4 py-3 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:border-[#871F1E] outline-none cursor-pointer hover:border-slate-300 transition-colors"
+                                                        value={transformSettings?.controlVariables?.baseMetrics?.volumeVariable ?? 'Units Sold'}
+                                                        onChange={(e) => setTransformSettings({ 
+                                                            controlVariables: { 
+                                                                ...(transformSettings?.controlVariables || { 
+                                                                    baseMetrics: { priceVariable: 'Average Unit Price', volumeVariable: 'Units Sold' }, 
+                                                                    promotions: { enabled: true, sensitivity: 'high' }, 
+                                                                    timeEffects: { priceChangeLag: 2 } 
+                                                                }),
+                                                                baseMetrics: {
+                                                                    ...(transformSettings?.controlVariables?.baseMetrics || { priceVariable: 'Average Unit Price', volumeVariable: 'Units Sold' }),
+                                                                    volumeVariable: e.target.value
+                                                                }
+                                                            } 
+                                                        })}
+                                                    >
+                                                        <option>Units Sold</option>
+                                                        <option>Total Conversions</option>
+                                                        <option>Signups</option>
+                                                    </select>
+                                                    <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
-                                );
+
+                                    {/* Promotions & Overlays */}
+                                    <div className="space-y-6 pt-4 border-t border-slate-100">
+                                        <div className="flex items-center justify-between">
+                                            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Promotions & Overlays</h3>
+                                            <div className={cn(
+                                                "w-8 h-4 rounded-full relative transition-colors cursor-pointer",
+                                                transformSettings?.controlVariables?.promotions?.enabled ? "bg-[#871F1E]" : "bg-slate-200"
+                                            )} onClick={() => setTransformSettings({ 
+                                                controlVariables: { 
+                                                    ...(transformSettings?.controlVariables || { 
+                                                        baseMetrics: { priceVariable: 'Average Unit Price', volumeVariable: 'Units Sold' }, 
+                                                        promotions: { enabled: true, sensitivity: 'high' }, 
+                                                        timeEffects: { priceChangeLag: 2 } 
+                                                    }),
+                                                    promotions: {
+                                                        ...(transformSettings?.controlVariables?.promotions || { enabled: true, sensitivity: 'high' }),
+                                                        enabled: !transformSettings?.controlVariables?.promotions?.enabled
+                                                    }
+                                                } 
+                                            })}>
+                                                <div className={cn(
+                                                    "absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all",
+                                                    transformSettings?.controlVariables?.promotions?.enabled ? "right-0.5" : "left-0.5"
+                                                )}></div>
+                                            </div>
+                                        </div>
+
+                                        <div className="bg-[#871F1E]/5 border border-[#871F1E]/10 rounded-xl p-4 flex gap-3">
+                                            <div className="font-bold text-[#871F1E]">%</div>
+                                            <p className="text-[10px] text-slate-600 leading-relaxed">
+                                                Discounts are modeled as interaction effects on the base price elasticity.
+                                            </p>
+                                        </div>
+
+                                        <div className="space-y-4">
+                                            <div className="flex items-center justify-between">
+                                                <label className="text-xs font-bold text-slate-700">Discount Sensitivity</label>
+                                                <div className="px-2 py-0.5 border border-slate-200 rounded-md bg-white text-[10px] font-bold text-[#871F1E] capitalize">
+                                                    {transformSettings?.controlVariables?.promotions?.sensitivity ?? 'High'}
+                                                </div>
+                                            </div>
+                                            <input 
+                                                type="range" min="0" max="2" step="1"
+                                                value={transformSettings?.controlVariables?.promotions?.sensitivity === 'low' ? 0 : transformSettings?.controlVariables?.promotions?.sensitivity === 'medium' ? 1 : 2}
+                                                onChange={(e) => {
+                                                    const val = Number(e.target.value);
+                                                    const sens = val === 0 ? 'low' : val === 1 ? 'medium' : 'high';
+                                                    setTransformSettings({ 
+                                                        controlVariables: { 
+                                                            ...(transformSettings?.controlVariables || { 
+                                                                baseMetrics: { priceVariable: 'Average Unit Price', volumeVariable: 'Units Sold' }, 
+                                                                promotions: { enabled: true, sensitivity: 'high' }, 
+                                                                timeEffects: { priceChangeLag: 2 } 
+                                                            }),
+                                                            promotions: {
+                                                                ...(transformSettings?.controlVariables?.promotions || { enabled: true, sensitivity: 'high' }),
+                                                                sensitivity: sens
+                                                            }
+                                                        } 
+                                                    });
+                                                }}
+                                                className="w-full accent-[#871F1E] h-1.5"
+                                            />
+                                            <div className="flex justify-between text-[9px] font-bold text-slate-400 uppercase">
+                                                <span>Low</span>
+                                                <span className="pl-4">Medium</span>
+                                                <span>High</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Time Effects */}
+                                    <div className="space-y-6 pt-4 border-t border-slate-100">
+                                        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Time Effects</h3>
+                                        
+                                        <div className="space-y-4">
+                                            <div className="flex items-center justify-between">
+                                                <label className="text-xs font-bold text-slate-700">Price Change Lag (Weeks)</label>
+                                                <div className="w-6 h-6 flex items-center justify-center border border-slate-200 rounded-md bg-white text-xs font-bold text-slate-900">
+                                                    {transformSettings?.controlVariables?.timeEffects?.priceChangeLag ?? 2}
+                                                </div>
+                                            </div>
+                                            <input 
+                                                type="range" min="0" max="8" step="1"
+                                                value={transformSettings?.controlVariables?.timeEffects?.priceChangeLag ?? 2}
+                                                onChange={(e) => setTransformSettings({ 
+                                                    controlVariables: { 
+                                                        ...(transformSettings?.controlVariables || { 
+                                                            baseMetrics: { priceVariable: 'Average Unit Price', volumeVariable: 'Units Sold' }, 
+                                                            promotions: { enabled: true, sensitivity: 'high' }, 
+                                                            timeEffects: { priceChangeLag: 2 } 
+                                                        }),
+                                                        timeEffects: {
+                                                            ...(transformSettings?.controlVariables?.timeEffects || { priceChangeLag: 2 }),
+                                                            priceChangeLag: Number(e.target.value)
+                                                        }
+                                                    } 
+                                                })}
+                                                className="w-full accent-[#871F1E] h-1.5"
+                                            />
+                                            <div className="flex justify-between text-[9px] font-bold text-slate-400 uppercase">
+                                                <span>Immediate</span>
+                                                <span>Delayed</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            );
                         }
                     })()}
 
