@@ -7,6 +7,7 @@ import { OptimizePage } from "./pages/OptimizePage";
 import { TrainPage } from "./pages/TrainPage";
 import { ValidatePage } from "./pages/ValidatePage";
 import { CalibratePage } from "./pages/CalibratePage";
+import { GeoLiftPage } from "./pages/GeoLiftPage";
 import { DocumentationPage } from "./pages/DocumentationPage";
 import { TransformPage } from "./pages/TransformPage";
 import { VideoTutorialsPage } from "./pages/VideoTutorialsPage";
@@ -51,6 +52,8 @@ function App() {
         return <ValidatePage />;
       case "calibrate":
         return <CalibratePage />;
+      case "geolift":
+        return <GeoLiftPage />;
       case "transform":
         return <TransformPage />;
       case "video-tutorials":
@@ -63,8 +66,8 @@ function App() {
   };
 
   // If we are on the login or signup page, don't show the sidebar layout
-  if (activePage === 'login' || activePage === 'signup') {
-    return activePage === 'login' ? <LoginPage /> : <SignUpPage />;
+  if (activePage === "login" || activePage === "signup") {
+    return activePage === "login" ? <LoginPage /> : <SignUpPage />;
   }
 
   return <Layout>{renderPage()}</Layout>;
