@@ -121,6 +121,7 @@ interface DataState {
     isLoaded: boolean;
     activePage: PageType;
     tutorials: Tutorial[];
+    channelColors: Record<string, string>;
 
     // Actions
     setData: (data: Record<string, unknown>[], headers: string[]) => void;
@@ -129,8 +130,8 @@ interface DataState {
     setTransformSettings: (settings: Partial<TransformSettings>) => void;
     setActivePage: (page: PageType) => void;
     addTutorial: (tutorial: Tutorial) => void;
-    deleteTutorial: (id: string) => void;
     updateTutorialProgress: (id: string, progress: number) => void;
+    setChannelColor: (channel: string, color: string) => void;
     reset: () => void;
 }
 
@@ -222,6 +223,40 @@ export const useDataStore = create<DataState>()(
             isLoaded: false,
             activePage: 'login',
             tutorials: [],
+            channelColors: {
+                'Base': '#64748b',
+                'Facebook Ads': '#1877F2',
+                'Google Search': '#4285F4',
+                'Instagram': '#E4405F',
+                'YouTube': '#FF0000',
+                'TikTok': '#000000',
+                'LinkedIn': '#0A66C2',
+                'Pinterest': '#E60023',
+                'Twitter': '#1DA1F2',
+                'Snapchat': '#FFFC00',
+                'Bing': '#00809D',
+                'Criteo': '#FF6000',
+                'Adtraction': '#FF4500',
+                'Facebook_Video': '#8B4513',
+                'Facebook_Lookalike': '#9ACD32',
+                'Facebook_Display': '#556B2F',
+                'Facebook_Brand': '#3CB371',
+                'Facebook_Broad': '#2E8B57',
+                'Criteo_Display': '#20B2AA',
+                'Bing_Search_NonBrand': '#008B8B',
+                'Bing_Search_Brand': '#00CED1',
+                'Adtraction_Affiliate': '#4169E1',
+                'Facebook_Prospecting': '#1877F2',
+                'Facebook_Retargeting': '#3b5998',
+                'Google_Search_Brand': '#4285F4',
+                'Google_Search_Generic': '#34A853',
+                'Google_Display': '#FBBC05',
+                'Google_Video': '#EA4335',
+                'TV': '#6D28D9',
+                'Radio': '#7C3AED',
+                'OOH': '#8B5CF6',
+                'Print': '#A78BFA'
+            },
 
             setData: (data, headers) => set({
                 rawData: data,
@@ -279,11 +314,11 @@ export const useDataStore = create<DataState>()(
                 tutorials: [tutorial, ...state.tutorials]
             })),
 
-            deleteTutorial: (id) => set((state) => ({
-                tutorials: state.tutorials.filter(t => t.id !== id)
+            deleteTutorial: (id: string) => set((state) => ({
+                tutorials: state.tutorials.filter(t => t.id === id)
             })),
 
-            updateTutorialProgress: (id, progress) => set((state) => ({
+            updateTutorialProgress: (id: string, progress: number) => set((state) => ({
                 tutorials: state.tutorials.map(t =>
                     t.id === id
                         ? {
@@ -293,6 +328,10 @@ export const useDataStore = create<DataState>()(
                         }
                         : t
                 )
+            })),
+
+            setChannelColor: (channel, color) => set((state) => ({
+                channelColors: { ...state.channelColors, [channel]: color }
             })),
 
             reset: () => set({
@@ -349,7 +388,31 @@ export const useDataStore = create<DataState>()(
                 },
                 isLoaded: false,
                 activePage: 'login',
-                tutorials: []
+                tutorials: [],
+                channelColors: {
+                    'Base': '#64748b',
+                    'Facebook Ads': '#1877F2',
+                    'Google Search': '#4285F4',
+                    'Instagram': '#E4405F',
+                    'YouTube': '#FF0000',
+                    'TikTok': '#000000',
+                    'LinkedIn': '#0A66C2',
+                    'Pinterest': '#E60023',
+                    'Twitter': '#1DA1F2',
+                    'Snapchat': '#FFFC00',
+                    'Bing': '#00809D',
+                    'Criteo': '#FF6000',
+                    'Adtraction': '#FF4500',
+                    'Facebook_Video': '#8B4513',
+                    'Facebook_Lookalike': '#9ACD32',
+                    'Facebook_Display': '#556B2F',
+                    'Facebook_Brand': '#3CB371',
+                    'Facebook_Broad': '#2E8B57',
+                    'Criteo_Display': '#20B2AA',
+                    'Bing_Search_NonBrand': '#008B8B',
+                    'Bing_Search_Brand': '#00CED1',
+                    'Adtraction_Affiliate': '#4169E1'
+                }
             }),
         }),
         {
@@ -363,6 +426,7 @@ export const useDataStore = create<DataState>()(
                 transformSettings: state.transformSettings,
                 isLoaded: state.isLoaded,
                 tutorials: state.tutorials,
+                channelColors: state.channelColors,
             }),
         }
     )

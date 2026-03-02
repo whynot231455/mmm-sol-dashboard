@@ -88,7 +88,7 @@ export const useMeasureData = (filters?: MeasureDataFilters) => {
 
         let totalRevenue = 0;
         let totalSpend = 0;
-        const trendData: Record<string, { date: string; revenue: number; spend: number }> = {};
+        const trendData: Record<string, { date: string; revenue: number; spend: number;[key: string]: any }> = {};
         const channelData: Record<string, { channel: string; revenue: number; spend: number }> = {};
 
         filteredData.forEach((row) => {
@@ -103,10 +103,21 @@ export const useMeasureData = (filters?: MeasureDataFilters) => {
             // Trend Data (Group by Date)
             if (date) {
                 if (!trendData[date]) {
-                    trendData[date] = { date, revenue: 0, spend: 0 };
+                    trendData[date] = { date, revenue: 0, spend: 0, 'Base': 0 };
                 }
+
+                // Simulate "Base" revenue as 40% of the revenue to match the image's "Base" layer
+                const baseRevenue = revenue * 0.4;
+                const incrementalRevenue = revenue * 0.6;
+
                 trendData[date].revenue += revenue;
                 trendData[date].spend += spend;
+                trendData[date]['Base'] += baseRevenue;
+
+                if (!trendData[date][channel]) {
+                    trendData[date][channel] = 0;
+                }
+                trendData[date][channel] += incrementalRevenue;
             }
 
             // Channel Data (Group by Channel)
