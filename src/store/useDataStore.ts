@@ -130,6 +130,7 @@ interface DataState {
     setTransformSettings: (settings: Partial<TransformSettings>) => void;
     setActivePage: (page: PageType) => void;
     addTutorial: (tutorial: Tutorial) => void;
+    deleteTutorial: (id: string) => void;
     updateTutorialProgress: (id: string, progress: number) => void;
     setChannelColor: (channel: string, color: string) => void;
     reset: () => void;
@@ -315,7 +316,7 @@ export const useDataStore = create<DataState>()(
             })),
 
             deleteTutorial: (id: string) => set((state) => ({
-                tutorials: state.tutorials.filter(t => t.id === id)
+                tutorials: state.tutorials.filter(t => t.id !== id)
             })),
 
             updateTutorialProgress: (id: string, progress: number) => set((state) => ({
