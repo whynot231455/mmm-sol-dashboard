@@ -69,7 +69,17 @@ export const MeasurePage = () => {
           <p className="text-slate-500 mt-1">Track your marketing mix effectiveness and ROI.</p>
         </div>
         <div className="flex items-center gap-3">
-          <p className="text-xs text-slate-400 font-medium">Last updated: Today, 9:41 AM</p>
+          
+<p className="text-xs text-slate-400 font-medium">
+  Last updated: {data?.lastUpdated ? new Date(data.lastUpdated).toLocaleString('en-US', { 
+    month: 'short', 
+    day: 'numeric', 
+    hour: 'numeric', 
+    minute: '2-digit', 
+    hour12: true 
+  }) : 'Just now'}
+</p>
+
           <button className="flex items-center gap-2 px-4 py-2 border border-slate-200 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors">
             <Download size={16} />
             Export Report
