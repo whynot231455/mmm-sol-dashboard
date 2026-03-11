@@ -11,6 +11,7 @@ import {
   FlaskConical,
   Video,
   BookOpen,
+  Workflow,
 } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
@@ -112,6 +113,11 @@ export const Sidebar = () => {
     {
       title: "Model",
       items: [
+        {
+          id: "pipelines" as PageType,
+          label: "Pipelines",
+          icon: <Workflow size={18} />,
+        },
         { id: "train" as PageType, label: "Train", icon: <Brain size={18} /> },
         {
           id: "validate" as PageType,

@@ -8,7 +8,7 @@ interface LayoutProps {
 }
 
 export const Layout = ({ children, activePage }: LayoutProps) => {
-  const isFullWidthArgs = ["connect", "optimize"];
+  const isFullWidthArgs = ["connect", "optimize", "pipelines"];
   const isFullWidth = activePage && isFullWidthArgs.includes(activePage);
 
   return (

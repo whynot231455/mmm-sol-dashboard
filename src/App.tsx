@@ -8,6 +8,7 @@ import { TrainPage } from "./pages/TrainPage";
 import { ValidatePage } from "./pages/ValidatePage";
 import { CalibratePage } from "./pages/CalibratePage";
 import { GeoLiftPage } from "./pages/GeoLiftPage";
+import { PipelinesPage } from "./pages/PipelinesPage";
 import { DocumentationPage } from "./pages/DocumentationPage";
 import { TransformPage } from "./pages/TransformPage";
 import { VideoTutorialsPage } from "./pages/VideoTutorialsPage";
@@ -54,6 +55,8 @@ function App() {
         return <CalibratePage />;
       case "geolift":
         return <GeoLiftPage />;
+      case "pipelines":
+        return <PipelinesPage />;
       case "transform":
         return <TransformPage />;
       case "video-tutorials":
