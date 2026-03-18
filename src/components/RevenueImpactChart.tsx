@@ -35,10 +35,6 @@ export const RevenueImpactChart = ({ data }: RevenueImpactChartProps) => {
             <div className="w-3 h-3 rounded-full bg-brand-primary" />
             Optimized
           </div>
-          <select className="ml-4 px-3 py-1.5 bg-slate-50 border border-slate-100 rounded-lg text-xs font-bold text-slate-600 outline-none">
-            <option>Next 30 Days</option>
-            <option>Next 90 Days</option>
-          </select>
         </div>
       </div>
 
@@ -76,20 +72,29 @@ export const RevenueImpactChart = ({ data }: RevenueImpactChartProps) => {
               contentStyle={{
                 borderRadius: "12px",
                 border: "none",
-                boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
+                boxShadow: "0 10px 15px -3px rgb(0 0 0 / 0.1)",
+                padding: "12px",
               }}
-              formatter={(val: number | string | undefined) => [
+              itemStyle={{ color: "#1e293b", fontWeight: 600, fontSize: '12px' }}
+              labelStyle={{ color: "#94a3b8", fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', marginBottom: '4px' }}
+              formatter={(val: number | string | undefined, name: string | undefined) => [
                 formatSmartCurrency(Number(val || 0)),
-                "Revenue",
+                name || "",
               ]}
             />
             <Bar
               dataKey="baseline"
+              name="Baseline Revenue"
               fill="#f1f5f9"
               radius={[4, 4, 0, 0]}
               barSize={40}
             />
-            <Bar dataKey="optimized" radius={[4, 4, 0, 0]} barSize={40}>
+            <Bar 
+              dataKey="optimized" 
+              name="Optimized Revenue"
+              radius={[4, 4, 0, 0]} 
+              barSize={40}
+            >
               {data.map((entry, index) => (
                 <Cell
                   key={`cell-${index}`}

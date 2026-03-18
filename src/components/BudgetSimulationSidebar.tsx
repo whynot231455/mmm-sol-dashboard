@@ -1,11 +1,15 @@
+import { useState, useEffect } from 'react';
 import { Search, Users, Tv, MonitorPlay, Lock, RefreshCw, AlertCircle } from 'lucide-react';
 
 interface SimulationSidebarProps {
   totalBudget: number;
   channelWeights: Record<string, number>;
   channels: string[];
+  period: number;
   onBudgetChange: (value: number) => void;
   onWeightChange: (channel: string, value: number) => void;
+  onPeriodChange: (period: number) => void;
+  onApply: () => void;
   onReset: () => void;
 }
 
@@ -21,10 +25,24 @@ export const BudgetSimulationSidebar = ({
   totalBudget, 
   channelWeights, 
   channels,
+  period,
   onBudgetChange,
   onWeightChange,
+  onPeriodChange,
+  onApply,
   onReset
 }: SimulationSidebarProps) => {
+  const [localBudget, setLocalBudget] = useState(totalBudget);
+
+  // Sync local state when prop changes (e.g. from parent reset or initialization)
+  useEffect(() => {
+    setLocalBudget(totalBudget);
+  }, [totalBudget]);
+
+  const handleBudgetSubmit = () => {
+    onBudgetChange(localBudget);
+  };
+
   return (
     <div className="bg-white border border-slate-100 rounded-2xl shadow-sm flex flex-col h-full">
       <div className="p-6 border-b border-slate-50 flex items-center justify-between">
@@ -50,10 +68,41 @@ export const BudgetSimulationSidebar = ({
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-medium">$</span>
                 <input 
                     type="text"
-                    value={totalBudget.toLocaleString()}
-                    onChange={(e) => onBudgetChange(Number(e.target.value.replace(/[^0-9]/g, '')))}
+                    value={localBudget.toLocaleString()}
+                    onChange={(e) => {
+                        const val = Number(e.target.value.replace(/[^0-9]/g, ''));
+                        setLocalBudget(val);
+                    }}
+                    onBlur={handleBudgetSubmit}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                            handleBudgetSubmit();
+                            onApply();
+                        }
+                    }}
                     className="w-full pl-8 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-xl font-bold text-slate-900 outline-none focus:ring-2 focus:ring-brand-primary/10 transition-all"
                 />
+            </div>
+        </div>
+
+        {/* Projection Period Selection */}
+        <div className="space-y-3">
+            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Projection Period</label>
+            <div className="grid grid-cols-3 gap-2 bg-slate-50 p-1 rounded-xl border border-slate-100">
+                {[1, 4, 6].map((p) => (
+                    <button
+                        key={p}
+                        onClick={() => onPeriodChange(p)}
+                        className={cn(
+                            "py-2 text-xs font-bold rounded-lg transition-all",
+                            period === p 
+                                ? "bg-white text-brand-primary shadow-sm ring-1 ring-slate-100" 
+                                : "text-slate-500 hover:text-slate-700 hover:bg-white/50"
+                        )}
+                    >
+                        {p} Mo{p > 1 ? 's' : ''}
+                    </button>
+                ))}
             </div>
         </div>
 

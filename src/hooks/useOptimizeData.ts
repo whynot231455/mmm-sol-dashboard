@@ -4,6 +4,7 @@ import { useDataStore } from '../store/useDataStore';
 export interface OptimizationParams {
     totalBudget: number;
     channelWeights: Record<string, number>; // -0.5 to 0.5 (relative change)
+    period: number; // multiplier for projections (e.g., 4, 6)
 }
 
 export const useOptimizeData = (params: OptimizationParams) => {
@@ -76,22 +77,31 @@ export const useOptimizeData = (params: OptimizationParams) => {
         const currentROAS = currentTotalRevenue / (currentTotalSpend || 1);
 
         // 3. Impact Over Time (Mocked monthly baseline vs optimized)
-        const impactTrend = [
-            { name: 'Week 1', baseline: currentTotalRevenue / 4, optimized: optimizedTotalRevenue / 4 * 0.95 },
-            { name: 'Week 2', baseline: currentTotalRevenue / 4, optimized: optimizedTotalRevenue / 4 * 1.02 },
-            { name: 'Week 3', baseline: currentTotalRevenue / 4, optimized: optimizedTotalRevenue / 4 * 1.08 },
-            { name: 'Week 4', baseline: currentTotalRevenue / 4, optimized: optimizedTotalRevenue / 4 * 1.15 },
-        ];
+        const impactTrend = params.period === 1 
+            ? [
+                { name: 'Week 1', baseline: currentTotalRevenue / 4, optimized: (optimizedTotalRevenue / 4) * 0.95 },
+                { name: 'Week 2', baseline: currentTotalRevenue / 4, optimized: (optimizedTotalRevenue / 4) * 1.02 },
+                { name: 'Week 3', baseline: currentTotalRevenue / 4, optimized: (optimizedTotalRevenue / 4) * 1.08 },
+                { name: 'Week 4', baseline: currentTotalRevenue / 4, optimized: (optimizedTotalRevenue / 4) * 1.15 },
+            ]
+            : Array.from({ length: params.period }, (_, i) => ({
+                name: `Month ${i + 1}`,
+                baseline: currentTotalRevenue,
+                optimized: (optimizedTotalRevenue * (1 + (i + 1) * 0.015)) // Subtle cumulative gain
+            }));
+
+        const totalIncrementalRevenue = Math.max(0, (optimizedTotalRevenue - currentTotalRevenue) * params.period);
 
         return {
             metrics: {
-                projectedRevenue: optimizedTotalRevenue,
+                projectedRevenue: optimizedTotalRevenue * params.period,
                 projectedRevenueLift: ((optimizedTotalRevenue - currentTotalRevenue) / currentTotalRevenue) * 100,
-                baselineRevenue: currentTotalRevenue,
+                baselineRevenue: currentTotalRevenue * params.period,
                 estROAS: optimizedROAS,
                 roasDelta: optimizedROAS - currentROAS,
-                forecastCPA: optimizedTotalSpend / (optimizedTotalRevenue * 0.1 || 1), // Mock CPA logic
-                cpaTrend: 2.1
+                forecastCPA: (optimizedTotalSpend * params.period) / (optimizedTotalRevenue * params.period * 0.1 || 1), // Mock CPA logic
+                cpaTrend: 2.1,
+                periodImpact: totalIncrementalRevenue
             },
             channels: optimizedData,
             impactTrend

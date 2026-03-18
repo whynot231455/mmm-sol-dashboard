@@ -12,10 +12,13 @@ export const OptimizePage = () => {
   const { rawData, mapping, setActivePage } = useDataStore();
 
   // State for Simulation
-  const [totalBudget, setTotalBudget] = useState<number>(0);
-  const [channelWeights, setChannelWeights] = useState<Record<string, number>>(
-    {},
-  );
+  const [tempBudget, setTempBudget] = useState<number>(0);
+  const [tempWeights, setTempWeights] = useState<Record<string, number>>({});
+  const [appliedParams, setAppliedParams] = useState<{
+    budget: number;
+    weights: Record<string, number>;
+  }>({ budget: 0, weights: {} });
+  const [selectedPeriod, setSelectedPeriod] = useState<number>(1);
 
   // Initialize Budget and Weights from Data
   useEffect(() => {
@@ -32,17 +35,24 @@ export const OptimizePage = () => {
         total += spend;
       });
       // eslint-disable-next-line react-hooks/set-state-in-effect
-      setTotalBudget(total);
+      setTempBudget(total);
       // Default Weights at 0 (No change)
       const initialWeights: Record<string, number> = {};
       Object.keys(perf).forEach((k) => (initialWeights[k] = 0));
-      setChannelWeights(initialWeights);
+      setTempWeights(initialWeights);
+
+      setAppliedParams({ budget: total, weights: initialWeights });
     }
   }, [rawData, mapping.spend, mapping.channel]);
 
+  const handleApply = () => {
+    setAppliedParams({ budget: tempBudget, weights: tempWeights });
+  };
+
   const optimization = useOptimizeData({
-    totalBudget,
-    channelWeights,
+    totalBudget: appliedParams.budget,
+    channelWeights: appliedParams.weights,
+    period: selectedPeriod,
   });
 
   if (!optimization) {
@@ -65,6 +75,23 @@ export const OptimizePage = () => {
   const { metrics, channels, impactTrend } = optimization;
   const channelNames = channels.map((c) => c.channel);
 
+  const handleRunOptimization = () => {
+    if (!channels || channels.length < 2) return;
+    
+    // Sort channels by current ROAS to find best and worst performers
+    const sorted = [...channels].sort((a, b) => b.roas - a.roas);
+    const topChannel = sorted[0];
+    const bottomChannel = sorted[sorted.length - 1];
+    
+    // Create an optimized mix: shift 20% budget from lowest to highest ROAS channel
+    const newWeights = { ...tempWeights };
+    newWeights[topChannel.channel] = (newWeights[topChannel.channel] || 0) + 0.2;
+    newWeights[bottomChannel.channel] = (newWeights[bottomChannel.channel] || 0) - 0.15;
+    
+    setTempWeights(newWeights);
+    setAppliedParams({ budget: tempBudget, weights: newWeights });
+  };
+
   return (
     <div className="space-y-8 animate-in fade-in duration-500 pb-12">
       {/* Header */}
@@ -83,7 +110,10 @@ export const OptimizePage = () => {
             <Save size={18} />
             Save Scenario
           </button>
-          <button className="flex items-center gap-2 px-6 py-3 bg-brand-secondary text-white rounded-xl text-sm font-bold shadow-lg shadow-red-200 hover:bg-red-600 transition-all">
+          <button 
+            onClick={handleRunOptimization}
+            className="flex items-center gap-2 px-6 py-3 bg-brand-secondary text-white rounded-xl text-sm font-bold shadow-lg shadow-red-200 hover:bg-red-600 transition-all active:scale-95"
+          >
             <Play size={18} fill="currentColor" />
             Run Optimization
           </button>
@@ -94,13 +124,16 @@ export const OptimizePage = () => {
         {/* Simulation Sidebar */}
         <div className="lg:col-span-1 h-full">
           <BudgetSimulationSidebar
-            totalBudget={totalBudget}
-            channelWeights={channelWeights}
+            totalBudget={tempBudget}
+            channelWeights={tempWeights}
             channels={channelNames}
-            onBudgetChange={setTotalBudget}
+            period={selectedPeriod}
+            onBudgetChange={setTempBudget}
             onWeightChange={(ch, val) =>
-              setChannelWeights((prev) => ({ ...prev, [ch]: val }))
+              setTempWeights((prev) => ({ ...prev, [ch]: val }))
             }
+            onPeriodChange={setSelectedPeriod}
+            onApply={handleApply}
             onReset={() => {
               // Trigger useEffect again or manual reset logic
               window.location.reload(); // Simple brute tool for reset in demo
@@ -127,13 +160,31 @@ export const OptimizePage = () => {
               icon={<TrendingUp size={24} />}
             />
             <KPICard
-              label="Forecast CPA"
+              label={`Forecast CPA (${selectedPeriod}Mo)`}
               value={`$${metrics.forecastCPA.toFixed(2)}`}
               trend={`${metrics.cpaTrend}%`}
               trendDirection="up"
               icon={<Target size={24} />}
             />
           </div>
+
+          {/* New Period Impact Card */}
+          {selectedPeriod > 1 && (
+            <div className="bg-gradient-to-r from-red-500 to-red-600 rounded-2xl p-6 shadow-lg shadow-red-100 flex items-center justify-between text-white">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+                  <TrendingUp size={24} className="text-white" />
+                </div>
+                <div>
+                  <p className="text-red-100 text-xs font-bold uppercase tracking-wider">Total {selectedPeriod}-Month Incremental Impact</p>
+                  <h3 className="text-2xl font-bold">{formatSmartCurrency(metrics.periodImpact)}</h3>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-red-100 text-xs font-medium">Estimated additional revenue for the next {selectedPeriod} months.</p>
+              </div>
+            </div>
+          )}
 
           {/* Impact Chart */}
           <RevenueImpactChart data={impactTrend} />
