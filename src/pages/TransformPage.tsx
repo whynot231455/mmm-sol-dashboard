@@ -99,7 +99,6 @@ export const TransformPage = () => {
     } = useDataStore();
     
     const [currentStep, setCurrentStep] = useState<TransformationStep>('data-source');
-    const [simPanelOpen, setSimPanelOpen] = useState(true);
 
     // Local simulation state (does not write to store, just for visual preview)
     const [simDecay, setSimDecay] = useState<number>(transformSettings?.adstock?.decayRate ?? 0.65);
@@ -635,7 +634,6 @@ export const TransformPage = () => {
         );
     }, [currentStep, controlVariableData, simSensitivity]);
 
-    const _ = simPanelOpen; // suppress unused warning
 
     return (
         <div className="flex flex-col h-full animate-in slide-in-from-bottom-2 duration-500">
@@ -658,13 +656,6 @@ export const TransformPage = () => {
                     </p>
                 </div>
                 <div className="flex items-center gap-3">
-                    <button
-                        onClick={() => setSimPanelOpen(v => !v)}
-                        className="flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 text-[11px] font-bold text-slate-600 hover:bg-slate-50 transition-all"
-                    >
-                        <SlidersHorizontal size={14} className="text-[#871F1E]" />
-                        Simulation Controls
-                    </button>
                     <div className="flex items-center gap-1 bg-slate-100/50 p-1 rounded-xl border border-slate-200">
                         <button className="p-2 text-slate-400 hover:text-slate-600 bg-white shadow-sm rounded-lg border border-slate-200 transition-all">
                             <Search size={18} />
