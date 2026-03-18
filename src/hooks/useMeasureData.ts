@@ -39,12 +39,14 @@ export const useMeasureData = (filters?: MeasureDataFilters) => {
         let filteredData = rawData;
 
         // Apply Filters
-        if (filters?.country && filters.country !== 'All') {
-            filteredData = filteredData.filter(row => row[mapping.country!] === filters.country);
+        const activeCountry = filters?.country && availableFilters.countries.includes(filters.country) ? filters.country : 'All';
+        if (activeCountry !== 'All') {
+            filteredData = filteredData.filter(row => row[mapping.country!] === activeCountry);
         }
 
-        if (filters?.channel && filters.channel !== 'All') {
-            filteredData = filteredData.filter(row => row[mapping.channel!] === filters.channel);
+        const activeChannel = filters?.channel && availableFilters.channels.includes(filters.channel) ? filters.channel : 'All';
+        if (activeChannel !== 'All') {
+            filteredData = filteredData.filter(row => row[mapping.channel!] === activeChannel);
         }
 
         // Date Filtering

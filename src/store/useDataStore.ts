@@ -259,10 +259,19 @@ export const useDataStore = create<DataState>()(
                 'Print': '#A78BFA'
             },
 
-            setData: (data, headers) => set({
-                rawData: data,
-                headers: headers,
-                isLoaded: data.length > 0
+            setData: (data, headers) => set((state) => {
+                const newMapping = { ...state.mapping };
+                for (const key in newMapping) {
+                    if (newMapping[key] && !headers.includes(newMapping[key] as string)) {
+                        delete newMapping[key];
+                    }
+                }
+                return {
+                    rawData: data,
+                    headers: headers,
+                    mapping: newMapping,
+                    isLoaded: data.length > 0
+                };
             }),
 
             setMapping: (mapping) => set({ mapping }),

@@ -27,7 +27,9 @@ export const ImportPage = () => {
 
   const handleFile = useCallback(
     async (file: File) => {
-      if (file.type !== "text/csv" && !file.name.endsWith(".csv")) {
+      const isCsvType = file.type === "text/csv" || file.type === "application/vnd.ms-excel";
+      const isCsvExtension = file.name.toLowerCase().endsWith(".csv");
+      if (!isCsvType && !isCsvExtension) {
         setError("Please upload a valid CSV file.");
         return;
       }
@@ -163,9 +165,12 @@ export const ImportPage = () => {
           <input
             type="file"
             accept=".csv"
-            onChange={(e) =>
-              e.target.files?.[0] && handleFile(e.target.files[0])
-            }
+            onChange={(e) => {
+              if (e.target.files?.[0]) {
+                handleFile(e.target.files[0]);
+                e.target.value = ''; // Reset input to allow re-uploading the same file
+              }
+            }}
             className="absolute inset-0 opacity-0 cursor-pointer"
           />
         </div>
