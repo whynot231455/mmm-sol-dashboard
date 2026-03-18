@@ -44,7 +44,7 @@ export const BudgetSimulationSidebar = ({
   };
 
   return (
-    <div className="bg-white border border-slate-100 rounded-2xl shadow-sm flex flex-col h-full">
+    <div className="bg-white border border-slate-100 rounded-2xl shadow-sm flex flex-col">
       <div className="p-6 border-b border-slate-50 flex items-center justify-between">
         <div className="flex items-center gap-2">
             <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center text-slate-600">

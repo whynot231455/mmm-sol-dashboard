@@ -3,9 +3,12 @@ import {
   X,
   CheckCircle2,
   AlertTriangle,
-  Calendar,
   Download,
   CloudUpload,
+  Activity,
+  Zap,
+  ShieldAlert,
+  BarChart3
 } from "lucide-react";
 import { useDataStore } from "../store/useDataStore";
 import { parseCSV } from "../lib/csvParser";
@@ -84,8 +87,21 @@ export const ImportPage = () => {
       }
     }
 
-    return { rowCount, errorCount, dateRange };
-  }, [rawData, mapping.date]);
+    // Quality Calculation
+    const mappedHeaders = Object.values(mapping).filter(Boolean);
+    const healthScores = mappedHeaders.map(h => {
+        const nulls = rawData.filter(row => !row[h!] || row[h!] === "").length;
+        return { header: h!, score: Math.max(0, 100 - (nulls / rowCount) * 100) };
+    });
+    
+    const avgHealth = healthScores.length > 0 
+        ? healthScores.reduce((sum, h) => sum + h.score, 0) / healthScores.length 
+        : 0;
+
+    const needsRetraining = avgHealth < 95 || errorCount > rowCount * 0.02;
+
+    return { rowCount, errorCount, dateRange, avgHealth, needsRetraining, healthScores };
+  }, [rawData, mapping]);
 
   // Preview Data (First 5 rows)
   const previewData = useMemo(() => rawData.slice(0, 5), [rawData]);
@@ -165,42 +181,71 @@ export const ImportPage = () => {
       {/* Metrics & Preview Section (Only if data is loaded) */}
       {rawData.length > 0 && metrics && (
         <>
-          {/* Metrics Row */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-center">
-              <div className="flex items-center gap-2 mb-2">
-                <CheckCircle2 className="w-5 h-5 text-green-500" />
-                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-                  Rows Imported
-                </span>
-              </div>
-              <p className="text-3xl font-bold text-slate-900">
-                {metrics.rowCount.toLocaleString()}
-              </p>
+          {/* Data Health & Model Readiness */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div className="lg:col-span-8 bg-white border border-slate-100 rounded-2xl p-8 shadow-sm">
+                <div className="flex items-center justify-between mb-8">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center text-brand-primary">
+                            <Activity size={20} />
+                        </div>
+                        <div>
+                            <h3 className="font-bold text-slate-900">Data Health Summary</h3>
+                            <p className="text-xs text-slate-500 font-medium">Dataset consistency and completeness analysis</p>
+                        </div>
+                    </div>
+                    <div className={cn(
+                        "px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-2",
+                        metrics.avgHealth > 90 ? "bg-green-50 text-green-600" : "bg-amber-50 text-amber-600"
+                    )}>
+                        <div className={cn("w-2 h-2 rounded-full animate-pulse", metrics.avgHealth > 90 ? "bg-green-500" : "bg-amber-500")} />
+                        Quality Score: {metrics.avgHealth.toFixed(1)}%
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Rows</p>
+                        <p className="text-lg font-bold text-slate-900">{metrics.rowCount.toLocaleString()}</p>
+                    </div>
+                    <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Null Density</p>
+                        <p className="text-lg font-bold text-slate-900">{(100 - metrics.avgHealth).toFixed(1)}%</p>
+                    </div>
+                    <div className="p-4 bg-slate-50 rounded-xl border border-slate-100 col-span-2">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Active Range</p>
+                        <p className="text-sm font-bold text-slate-900 truncate">{metrics.dateRange}</p>
+                    </div>
+                </div>
             </div>
 
-            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-center bg-red-50/30 border-red-100">
-              <div className="flex items-center gap-2 mb-2">
-                <AlertTriangle className="w-5 h-5 text-brand-secondary" />
-                <span className="text-xs font-bold text-brand-secondary uppercase tracking-wider">
-                  Validation Errors
-                </span>
-              </div>
-              <p className="text-3xl font-bold text-slate-900">
-                {metrics.errorCount}
-              </p>
-            </div>
-
-            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-center">
-              <div className="flex items-center gap-2 mb-2">
-                <Calendar className="w-5 h-5 text-brand-third" />
-                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-                  Date Range
-                </span>
-              </div>
-              <p className="text-xl font-bold text-slate-900 truncate">
-                {metrics.dateRange}
-              </p>
+            <div className={cn(
+                "lg:col-span-4 rounded-2xl p-8 border flex flex-col justify-between transition-all",
+                metrics.needsRetraining 
+                    ? "bg-amber-50 border-amber-100 text-amber-900" 
+                    : "bg-indigo-50 border-indigo-100 text-indigo-900 shadow-sm shadow-indigo-100/50"
+            )}>
+                <div>
+                   <div className="flex items-center gap-2 mb-4">
+                        {metrics.needsRetraining ? <ShieldAlert size={24} className="text-amber-600" /> : <Zap size={24} className="text-brand-primary" />}
+                        <h3 className="font-bold">Model Readiness</h3>
+                   </div>
+                   <p className="text-sm leading-relaxed opacity-80 font-medium">
+                        {metrics.needsRetraining 
+                            ? "Significant data drift or missing entries detected. We recommend retraining the MMM model or cleaning the source CSV." 
+                            : "Your data quality is excellent. The model is currently optimized for this distribution."}
+                   </p>
+                </div>
+                
+                <button className={cn(
+                    "w-full py-3 rounded-xl font-bold mt-6 flex items-center justify-center gap-2 transition-all",
+                    metrics.needsRetraining 
+                        ? "bg-amber-600 text-white hover:bg-amber-700" 
+                        : "bg-brand-primary text-white hover:bg-brand-primary"
+                )}>
+                    {metrics.needsRetraining ? "Retrain Model Now" : "Retrain Optional"}
+                    <BarChart3 size={18} />
+                </button>
             </div>
           </div>
 

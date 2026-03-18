@@ -3,6 +3,10 @@ import { useOptimizeData } from "../hooks/useOptimizeData";
 import { BudgetSimulationSidebar } from "../components/BudgetSimulationSidebar";
 import { RevenueImpactChart } from "../components/RevenueImpactChart";
 import { ReallocationTable } from "../components/ReallocationTable";
+import { 
+  SimulationPanel, 
+  type SimulationParams 
+} from "../components/SimulationPanel";
 import { KPICard } from "../components/KPICard";
 import { formatSmartCurrency } from "../lib/formatters";
 import { DollarSign, Target, TrendingUp, Save, Play } from "lucide-react";
@@ -19,6 +23,11 @@ export const OptimizePage = () => {
     weights: Record<string, number>;
   }>({ budget: 0, weights: {} });
   const [selectedPeriod, setSelectedPeriod] = useState<number>(1);
+  const [simulationParams, setSimulationParams] = useState<SimulationParams>({
+    spendChange: 0,
+    seasonality: 1,
+    excludeOutliers: false,
+  });
 
   // Initialize Budget and Weights from Data
   useEffect(() => {
@@ -120,9 +129,9 @@ export const OptimizePage = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Simulation Sidebar */}
-        <div className="lg:col-span-1 h-full">
+        <div className="lg:col-span-4 space-y-6 lg:sticky lg:top-8">
           <BudgetSimulationSidebar
             totalBudget={tempBudget}
             channelWeights={tempWeights}
@@ -139,10 +148,15 @@ export const OptimizePage = () => {
               window.location.reload(); // Simple brute tool for reset in demo
             }}
           />
+          <SimulationPanel
+            params={simulationParams}
+            onChange={setSimulationParams}
+            onRecalculate={handleApply}
+          />
         </div>
 
         {/* Main Dashboard Area */}
-        <div className="lg:col-span-3 space-y-6">
+        <div className="lg:col-span-8 space-y-8">
           {/* KPI Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <KPICard

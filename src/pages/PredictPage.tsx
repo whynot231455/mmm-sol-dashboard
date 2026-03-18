@@ -1,10 +1,6 @@
 import { useState } from "react";
 import { usePredictData } from "../hooks/usePredictData";
 import { ForecastChart } from "../components/ForecastChart";
-import {
-  SimulationPanel,
-  type SimulationParams,
-} from "../components/SimulationPanel";
 import { ChannelHeatmap } from "../components/ChannelHeatmap";
 import { KPICard } from "../components/KPICard";
 import { TrendingUp, ShieldCheck, Calendar, Download } from "lucide-react";
@@ -13,20 +9,13 @@ import { formatSmartCurrency, formatPercent } from "../lib/formatters";
 
 export const PredictPage = () => {
   const { setActivePage } = useDataStore();
-  const [params, setParams] = useState<SimulationParams>({
+  const [params] = useState({
     spendChange: 0,
     seasonality: 1,
     excludeOutliers: false,
   });
 
   const data = usePredictData(params);
-
-  // Trigger recalculation (in this simple version, state change triggers hook already)
-  const handleRecalculate = () => {
-    // In a real app, this might trigger an API call.
-    // Here, the hook is reactive, so we just log or show a toast.
-    console.log("Recalculating with:", params);
-  };
 
   if (!data) {
     return (
@@ -96,21 +85,9 @@ export const PredictPage = () => {
         />
       </div>
 
-      {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Chart Section */}
-        <div className="lg:col-span-2">
-          <ForecastChart data={charts.combined} />
-        </div>
-
-        {/* Sidebar Controls */}
-        <div>
-          <SimulationPanel
-            params={params}
-            onChange={setParams}
-            onRecalculate={handleRecalculate}
-          />
-        </div>
+      {/* Main Content Info */}
+      <div className="w-full">
+        <ForecastChart data={charts.combined} />
       </div>
 
       {/* Heatmap Section */}
