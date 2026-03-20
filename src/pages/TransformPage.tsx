@@ -191,7 +191,7 @@ export const TransformPage = () => {
             const discount = (idx === 15 || idx === 35) ? 15 : 0;
             const finalPrice = basePrice + seasonalEffect - discount;
             const volumeChange = ((finalPrice - 50) / 50) * sensitivityMultiplier;
-            const volume = 1000 * (1 + volumeChange) + Math.random() * 50;
+            const volume = 1000 * (1 + volumeChange);
             return {
                 name: row[dateKey] || `Week ${idx}`,
                 price: finalPrice,

@@ -12,6 +12,7 @@ import {
   Video,
   BookOpen,
   Workflow,
+  MessageSquare,
 } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
@@ -87,6 +88,11 @@ export const Sidebar = () => {
           id: "optimize" as PageType,
           label: "Optimize",
           icon: <Settings2 size={18} />,
+        },
+        {
+          id: "chat" as PageType,
+          label: "Chat",
+          icon: <MessageSquare size={18} />,
         },
       ],
     },

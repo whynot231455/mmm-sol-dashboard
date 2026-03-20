@@ -27,7 +27,7 @@ interface ColumnMapping {
 }
 
 export type PageType =
-    | 'login' | 'signup' | 'measure' | 'predict' | 'optimize'
+    | 'login' | 'signup' | 'measure' | 'predict' | 'optimize' | 'chat'
     | 'import' | 'connect' | 'transform'
     | 'train' | 'validate' | 'calibrate' | 'geolift' | 'pipelines'
     | 'video-tutorials' | 'documentation';

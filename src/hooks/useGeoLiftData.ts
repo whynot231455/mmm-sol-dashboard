@@ -298,9 +298,9 @@ export function useGeoLiftData(): GeoLiftData {
       const weekNum = Math.floor(i / 7);
       const base = 42000 + Math.sin(i / 7) * 3000;
       const liftFactor =
-        1 + weekNum * 0.015 + (Math.random() * 0.04 - 0.02);
-      const controlNoise = Math.random() * 2000 - 1000;
-      const treatmentNoise = Math.random() * 2500 - 1250;
+        1 + weekNum * 0.015;
+      const controlNoise = (i % 7) * 200 - 600;
+      const treatmentNoise = (i % 7) * 300 - 900;
 
       monitorData.push({
         date: date.toISOString().split("T")[0],
@@ -370,11 +370,11 @@ export function useGeoLiftData(): GeoLiftData {
       const date = new Date(baseDate);
       date.setDate(date.getDate() + i);
       const base =
-        42000 + Math.sin((i + 28) / 7) * 2000 + Math.random() * 1500;
+        42000 + Math.sin((i + 28) / 7) * 2000;
       counterfactualData.push({
         date: date.toISOString().split("T")[0],
         actual: Math.round(base),
-        counterfactual: Math.round(base + Math.random() * 500 - 250),
+        counterfactual: Math.round(base),
         liftArea: 0,
       });
     }
@@ -383,7 +383,7 @@ export function useGeoLiftData(): GeoLiftData {
       const date = new Date(baseDate);
       date.setDate(date.getDate() + i);
       const weekNum = Math.floor(i / 7);
-      const base = 42000 + Math.sin(i / 7) * 2000 + Math.random() * 1500;
+      const base = 42000 + Math.sin(i / 7) * 2000;
       const lift = base * (0.05 + weekNum * 0.008);
       counterfactualData.push({
         date: date.toISOString().split("T")[0],

@@ -14,6 +14,7 @@ import { TransformPage } from "./pages/TransformPage";
 import { VideoTutorialsPage } from "./pages/VideoTutorialsPage";
 import { LoginPage } from "./pages/LoginPage";
 import { SignUpPage } from "./pages/SignUpPage";
+import { ChatPage } from "./pages/ChatPage";
 import { useDataStore } from "./store/useDataStore";
 
 const PlaceholderPage = ({ title }: { title: string }) => (
@@ -47,6 +48,8 @@ function App() {
         return <PredictPage />;
       case "optimize":
         return <OptimizePage />;
+      case "chat":
+        return <ChatPage />;
       case "train":
         return <TrainPage />;
       case "validate":
@@ -73,7 +76,7 @@ function App() {
     return activePage === "login" ? <LoginPage /> : <SignUpPage />;
   }
 
-  return <Layout>{renderPage()}</Layout>;
+  return <Layout activePage={activePage}>{renderPage()}</Layout>;
 }
 
 export default App;

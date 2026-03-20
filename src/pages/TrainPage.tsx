@@ -28,7 +28,6 @@ export const TrainPage = () => {
   };
 
   const handleStartTraining = () => {
-    console.log('Starting training with config:', config);
     alert('Training started! (This is a demo)');
   };
 

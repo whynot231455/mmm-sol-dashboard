@@ -23,8 +23,7 @@ export const CalibratePage = () => {
 
   const { metrics, impactData, coefficientChanges, activeStudies, toggleStudy, tuningParams } = data;
 
-  const handleFileUpload = (file: File) => {
-    console.log('Uploaded lift study:', file.name);
+  const handleFileUpload = () => {
     // In real implementation, parse and process the file
   };
 

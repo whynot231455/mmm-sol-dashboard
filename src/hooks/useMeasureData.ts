@@ -90,7 +90,7 @@ export const useMeasureData = (filters?: MeasureDataFilters) => {
 
         let totalRevenue = 0;
         let totalSpend = 0;
-        const trendData: Record<string, { date: string; revenue: number; spend: number;[key: string]: any }> = {};
+        const trendData: Record<string, { date: string; revenue: number; spend: number; [key: string]: string | number }> = {};
         const channelData: Record<string, { channel: string; revenue: number; spend: number }> = {};
 
         filteredData.forEach((row) => {
@@ -112,14 +112,18 @@ export const useMeasureData = (filters?: MeasureDataFilters) => {
                 const baseRevenue = revenue * 0.4;
                 const incrementalRevenue = revenue * 0.6;
 
+                // Update revenue and spend
                 trendData[date].revenue += revenue;
                 trendData[date].spend += spend;
-                trendData[date]['Base'] += baseRevenue;
+                
+                // Update layers for the stacked chart
+                // "Base" is always present as a layer
+                trendData[date]['Base'] = (Number(trendData[date]['Base']) || 0) + baseRevenue;
 
-                if (!trendData[date][channel]) {
-                    trendData[date][channel] = 0;
+                // Each channel has its own layer (avoiding double-counting with "Base")
+                if (channel !== 'Base') {
+                    trendData[date][channel] = (Number(trendData[date][channel]) || 0) + incrementalRevenue;
                 }
-                trendData[date][channel] += incrementalRevenue;
             }
 
             // Channel Data (Group by Channel)
