@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import type { StateStorage } from 'zustand/middleware';
 import { get, set as idbSet, del } from 'idb-keyval';
+import { supabase } from '../lib/supabase';
 
 // Custom storage for Zustand persistence using IndexedDB (via idb-keyval)
 // This enables storing large datasets that exceed localStorage's ~5MB limit.
@@ -111,6 +112,29 @@ export interface TransformSettings {
     };
 }
 
+export interface Message {
+    id: string;
+    role: 'user' | 'assistant';
+    content: string;
+    timestamp: string;
+    attachments?: ChatAttachment[];
+}
+
+export interface ChatAttachment {
+    id: string;
+    name: string;
+    type: 'image';
+    mimeType: 'image/png' | 'image/jpeg';
+    dataUrl?: string;
+}
+
+export interface ChatSession {
+    id: string;
+    title: string;
+    messages: Message[];
+    lastUpdated: number;
+}
+
 interface DataState {
     rawData: Record<string, unknown>[];
     headers: string[];
@@ -122,6 +146,8 @@ interface DataState {
     activePage: PageType;
     tutorials: Tutorial[];
     channelColors: Record<string, string>;
+    chatSessions: ChatSession[];
+    activeChatSessionId: string | null;
 
     // Actions
     setData: (data: Record<string, unknown>[], headers: string[]) => void;
@@ -133,8 +159,43 @@ interface DataState {
     deleteTutorial: (id: string) => void;
     updateTutorialProgress: (id: string, progress: number) => void;
     setChannelColor: (channel: string, color: string) => void;
+    setChatSessions: (sessions: ChatSession[] | ((prev: ChatSession[]) => ChatSession[])) => void;
+    setActiveChatSessionId: (id: string | null) => void;
+    addMessageToSession: (sessionId: string, message: Message) => void;
+    updateMessageInSession: (sessionId: string, messageId: string, content: string) => void;
+    updateChatSession: (sessionId: string, updates: Partial<ChatSession>) => void;
+    deleteChatSession: (id: string) => void;
+    removeChatSessionLocally: (id: string) => void;
+    clearChatSessions: () => void;
     reset: () => void;
 }
+
+const stripAttachmentData = (attachment: ChatAttachment): ChatAttachment => ({
+    id: attachment.id,
+    name: attachment.name,
+    type: attachment.type,
+    mimeType: attachment.mimeType,
+});
+
+const stripSessionAttachmentData = (session: ChatSession): ChatSession => ({
+    ...session,
+    messages: session.messages.map((message) => ({
+        ...message,
+        attachments: message.attachments?.map(stripAttachmentData) ?? [],
+    })),
+});
+
+const syncSessionMetadata = (session: ChatSession) => {
+    void supabase.from('chat_sessions').upsert({
+        id: session.id,
+        title: session.title,
+        last_updated: new Date(session.lastUpdated).toISOString()
+    }, { onConflict: 'id' }).then(({ error }) => {
+        if (error) {
+            console.error('Failed to sync session', error);
+        }
+    });
+};
 
 const initialDocumentation: DocSection[] = [
     {
@@ -161,6 +222,35 @@ const initialDocumentation: DocSection[] = [
                     { title: 'Key Components', id: 'key-components' },
                     { title: 'Adstock Theory', id: 'adstock' },
                     { title: 'Diminishing Returns', id: 'returns' }
+                ]
+            }
+        ]
+    },
+    {
+        id: '2',
+        title: 'About Sol Analytics',
+        articles: [
+            {
+                id: 'company-overview',
+                title: 'Paving the Way for Insights & Intelligence',
+                readingTime: '3 min read',
+                tags: ['Company', 'Identity'],
+                lastUpdated: 'Dec 2025',
+                abstract: 'Learn about Sol Analytics, a leading consulting company focused on Research, Marketing Analytics, and Digital Transformation.',
+                content: `
+                    <p>Sol Analytics is a premier consulting firm dedicated to empowering organizations through data-driven decision-making. We focus on three core pillars: <strong>Insights, Intelligence, and Infrastructure</strong>.</p>
+                    <h2 id="core-pillars">Core Pillars</h2>
+                    <ul>
+                        <li><strong>Insights:</strong> Building a Single Version of Truth (SVOT) to enable confident, fact-based choices.</li>
+                        <li><strong>Intelligence:</strong> Leveraging Predictive and Prescriptive Analytics for strategic foresight and agility.</li>
+                        <li><strong>Infrastructure:</strong> Establishing robust data platforms, warehouses, and cloud migration services.</li>
+                    </ul>
+                    <h2 id="our-expertise">Our Expertise</h2>
+                    <p>We combine deep knowledge in Consulting, Technology, and Data Science to uncover hidden facts and unlock boundless possibilities for business growth.</p>
+                `,
+                onPageLinks: [
+                    { title: 'Core Pillars', id: 'core-pillars' },
+                    { title: 'Expertise', id: 'our-expertise' }
                 ]
             }
         ]
@@ -258,6 +348,8 @@ export const useDataStore = create<DataState>()(
                 'OOH': '#8B5CF6',
                 'Print': '#A78BFA'
             },
+            chatSessions: [],
+            activeChatSessionId: null,
 
             setData: (data, headers) => set((state) => {
                 const newMapping = { ...state.mapping };
@@ -284,7 +376,6 @@ export const useDataStore = create<DataState>()(
                 transformSettings: {
                     ...state.transformSettings,
                     ...settings,
-                    // Handle nested objects to avoid overwriting them entirely if not provided
                     aggregation: settings.aggregation
                         ? { ...state.transformSettings.aggregation, ...settings.aggregation }
                         : state.transformSettings.aggregation,
@@ -340,9 +431,71 @@ export const useDataStore = create<DataState>()(
                 )
             })),
 
-            setChannelColor: (channel, color) => set((state) => ({
+            setChannelColor: (channel: string, color: string) => set((state) => ({
                 channelColors: { ...state.channelColors, [channel]: color }
             })),
+            
+            setChatSessions: (sessions) => set((state) => ({
+                chatSessions: typeof sessions === 'function' ? sessions(state.chatSessions) : sessions
+            })),
+            setActiveChatSessionId: (id) => set({ activeChatSessionId: id }),
+            addMessageToSession: (sessionId, message) => {
+                let updatedSession: ChatSession | null = null;
+                set((state) => ({
+                    chatSessions: state.chatSessions.map(s => 
+                        s.id === sessionId 
+                            ? (updatedSession = { ...s, messages: [...s.messages, message], lastUpdated: Date.now() })
+                            : s
+                    )
+                }));
+                if (updatedSession) {
+                    syncSessionMetadata(updatedSession);
+                }
+            },
+            updateMessageInSession: (sessionId, messageId, content) => {
+                set((state) => ({
+                    chatSessions: state.chatSessions.map(s => 
+                        s.id === sessionId 
+                            ? { 
+                                ...s, 
+                                messages: s.messages.map(m => m.id === messageId ? { ...m, content } : m),
+                                lastUpdated: Date.now() 
+                            }
+                            : s
+                    )
+                }));
+            },
+            updateChatSession: (sessionId, updates) => {
+                let updatedSession: ChatSession | null = null;
+                set((state) => ({
+                    chatSessions: state.chatSessions.map(s => 
+                        s.id === sessionId 
+                            ? (updatedSession = { ...s, ...updates, lastUpdated: Date.now() })
+                            : s
+                    )
+                }));
+                if (updatedSession) {
+                    syncSessionMetadata(updatedSession);
+                }
+            },
+            deleteChatSession: async (id) => {
+                // Delete from Supabase first (Cascading Delete)
+                try {
+                    await supabase.from('chat_sessions').delete().eq('id', id);
+                } catch (err) {
+                    console.error('Failed to delete chat session from Supabase:', err);
+                }
+
+                set((state) => ({
+                    chatSessions: state.chatSessions.filter(s => s.id !== id),
+                    activeChatSessionId: state.activeChatSessionId === id ? null : state.activeChatSessionId
+                }));
+            },
+            removeChatSessionLocally: (id) => set((state) => ({
+                chatSessions: state.chatSessions.filter(s => s.id !== id),
+                activeChatSessionId: state.activeChatSessionId === id ? null : state.activeChatSessionId
+            })),
+            clearChatSessions: () => set({ chatSessions: [], activeChatSessionId: null }),
 
             reset: () => set({
                 rawData: [],
@@ -353,7 +506,7 @@ export const useDataStore = create<DataState>()(
                     channel: 'All',
                     dateRange: 'All Time'
                 },
-                documentation: [],
+                documentation: initialDocumentation,
                 transformSettings: {
                     primaryMetric: 'spend',
                     aggregation: {
@@ -428,6 +581,21 @@ export const useDataStore = create<DataState>()(
         {
             name: 'mmm-dashboard-storage', // Key for IndexedDB
             storage: createJSONStorage(() => storage),
+            version: 1,
+            migrate: (persistedState: unknown) => {
+                if (!persistedState || typeof persistedState !== 'object') {
+                    return persistedState as DataState;
+                }
+
+                const state = persistedState as Partial<DataState>;
+
+                return {
+                    ...state,
+                    chatSessions: Array.isArray(state.chatSessions)
+                        ? state.chatSessions.map(stripSessionAttachmentData)
+                        : [],
+                } as DataState;
+            },
             partialize: (state) => ({
                 rawData: state.rawData,
                 headers: state.headers,
@@ -437,6 +605,8 @@ export const useDataStore = create<DataState>()(
                 isLoaded: state.isLoaded,
                 tutorials: state.tutorials,
                 channelColors: state.channelColors,
+                chatSessions: state.chatSessions.map(stripSessionAttachmentData),
+                activeChatSessionId: state.activeChatSessionId,
             }),
         }
     )

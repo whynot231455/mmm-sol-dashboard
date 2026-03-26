@@ -29,8 +29,13 @@ const PlaceholderPage = ({ title }: { title: string }) => (
   </div>
 );
 
+import { useDashboardSync } from "./hooks/useDashboardSync";
+
 function App() {
   const { activePage } = useDataStore();
+  
+  // Enable automatic dashboard state sync to Supabase
+  useDashboardSync();
 
   const renderPage = () => {
     switch (activePage) {

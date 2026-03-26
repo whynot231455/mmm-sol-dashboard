@@ -1,11 +1,12 @@
 import { useMemo } from 'react';
 import { useDataStore } from '../store/useDataStore';
 
-export const useValidateData = () => {
+export const useValidateData = (options?: { enabled?: boolean }) => {
     const { rawData, mapping } = useDataStore();
+    const enabled = options?.enabled ?? true;
 
     return useMemo(() => {
-        if (!rawData.length || !mapping.date || !mapping.revenue || !mapping.channel) {
+        if (!enabled || !rawData.length || !mapping.date || !mapping.revenue || !mapping.channel) {
             return null;
         }
 
@@ -111,5 +112,5 @@ export const useValidateData = () => {
                 lastUpdated: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
             }
         };
-    }, [rawData, mapping]);
+    }, [rawData, mapping, enabled]);
 };

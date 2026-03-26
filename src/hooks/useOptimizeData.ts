@@ -7,11 +7,12 @@ export interface OptimizationParams {
     period: number; // multiplier for projections (e.g., 4, 6)
 }
 
-export const useOptimizeData = (params: OptimizationParams) => {
+export const useOptimizeData = (params: OptimizationParams, options?: { enabled?: boolean }) => {
     const { rawData, mapping } = useDataStore();
+    const enabled = options?.enabled ?? true;
 
     return useMemo(() => {
-        if (!rawData.length || !mapping.channel || !mapping.revenue || !mapping.spend) {
+        if (!enabled || !rawData.length || !mapping.channel || !mapping.revenue || !mapping.spend) {
             return null;
         }
 
@@ -107,5 +108,5 @@ export const useOptimizeData = (params: OptimizationParams) => {
             impactTrend
         };
 
-    }, [rawData, mapping, params]);
+    }, [rawData, mapping, params, enabled]);
 };

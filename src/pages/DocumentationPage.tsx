@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { 
     Search, 
     Home, 
@@ -18,14 +18,80 @@ function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+const sanitizeDocumentationHtml = (html: string) => {
+    if (typeof window === 'undefined') {
+        return html;
+    }
+
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+    const blockedTags = ['script', 'style', 'iframe', 'object', 'embed', 'link', 'meta'];
+
+    blockedTags.forEach((tag) => {
+        doc.querySelectorAll(tag).forEach((element) => element.remove());
+    });
+
+    doc.body.querySelectorAll('*').forEach((element) => {
+        Array.from(element.attributes).forEach((attribute) => {
+            const name = attribute.name.toLowerCase();
+            const value = attribute.value.trim().toLowerCase();
+
+            if (name.startsWith('on')) {
+                element.removeAttribute(attribute.name);
+                return;
+            }
+
+            if ((name === 'href' || name === 'src') && value.startsWith('javascript:')) {
+                element.removeAttribute(attribute.name);
+            }
+        });
+    });
+
+    return doc.body.innerHTML;
+};
+
 export const DocumentationPage = () => {
     const { documentation = [] } = useDataStore();
     const [searchQuery, setSearchQuery] = useState('');
     const [activeSectionId, setActiveSectionId] = useState(documentation[0]?.id || '');
-    const [activeArticleId] = useState(documentation[0]?.articles[0]?.id || '');
+    const [activeArticleId, setActiveArticleId] = useState(documentation[0]?.articles[0]?.id || '');
 
-    const activeSection = documentation.find(s => s.id === activeSectionId) || documentation[0];
+    const filteredDocumentation = useMemo(() => {
+        const normalizedQuery = searchQuery.trim().toLowerCase();
+        if (!normalizedQuery) {
+            return documentation;
+        }
+
+        return documentation
+            .map((section) => {
+                const articles = section.articles.filter((article) => {
+                    const searchableText = [
+                        article.title,
+                        article.abstract,
+                        article.tags.join(' '),
+                        article.content,
+                    ].join(' ').toLowerCase();
+
+                    return searchableText.includes(normalizedQuery);
+                });
+
+                return { ...section, articles };
+            })
+            .filter((section) => section.articles.length > 0);
+    }, [documentation, searchQuery]);
+
+    const activeSection = filteredDocumentation.find(s => s.id === activeSectionId) || filteredDocumentation[0];
     const activeArticle = activeSection?.articles.find(a => a.id === activeArticleId) || activeSection?.articles[0];
+    const safeArticleContent = useMemo(
+        () => sanitizeDocumentationHtml(activeArticle?.content ?? ''),
+        [activeArticle?.content],
+    );
+
+    const handleSectionChange = (sectionId: string) => {
+        const nextSection = filteredDocumentation.find((section) => section.id === sectionId);
+        setActiveSectionId(sectionId);
+        setActiveArticleId(nextSection?.articles[0]?.id || '');
+    };
 
     return (
         <div className="flex flex-col h-full animate-in fade-in duration-500">
@@ -71,10 +137,10 @@ export const DocumentationPage = () => {
                             <div className="relative">
                                 <select 
                                     className="appearance-none pl-4 pr-10 py-2 bg-white border border-slate-200 rounded-lg text-sm font-bold text-slate-700 outline-none focus:border-brand-primary cursor-pointer shadow-sm hover:border-slate-300 transition-all"
-                                    value={activeSectionId}
-                                    onChange={(e) => setActiveSectionId(e.target.value)}
+                                    value={activeSection?.id ?? ''}
+                                    onChange={(e) => handleSectionChange(e.target.value)}
                                 >
-                                    {documentation.map(section => (
+                                    {filteredDocumentation.map(section => (
                                         <option key={section.id} value={section.id}>{section.title}</option>
                                     ))}
                                 </select>
@@ -110,7 +176,7 @@ export const DocumentationPage = () => {
 
                             {/* Article Body */}
                             <div className="prose prose-slate max-w-none">
-                                <div dangerouslySetInnerHTML={{ __html: activeArticle.content }} className="documentation-content" />
+                                <div dangerouslySetInnerHTML={{ __html: safeArticleContent }} className="documentation-content" />
                                 
                                 {/* Specialized Tip Box based on brand colors */}
                                 <div className="mt-10 bg-[#871F1E]/[0.02] border-l-4 border-[#871F1E] rounded-r-2xl p-6 relative overflow-hidden group">
@@ -137,6 +203,27 @@ export const DocumentationPage = () => {
                 {/* Right Sidebar */}
                 <div className="lg:col-span-3 space-y-10">
                     {/* On This Page */}
+                    <div className="space-y-4">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Articles</span>
+                        <div className="flex flex-col gap-2">
+                            {activeSection?.articles.map((article) => (
+                                <button
+                                    key={article.id}
+                                    type="button"
+                                    onClick={() => setActiveArticleId(article.id)}
+                                    className={cn(
+                                        "rounded-xl border px-4 py-3 text-left text-sm font-semibold transition-all",
+                                        article.id === activeArticle?.id
+                                            ? "border-[#871F1E]/20 bg-[#871F1E]/5 text-[#871F1E]"
+                                            : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:text-slate-900",
+                                    )}
+                                >
+                                    {article.title}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
                     <div className="space-y-4">
                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">On This Page</span>
                         <nav className="flex flex-col gap-3">
@@ -183,6 +270,15 @@ export const DocumentationPage = () => {
                     </div>
                 </div>
             </div>
+
+            {filteredDocumentation.length === 0 && (
+                <div className="mt-10 rounded-3xl border border-dashed border-slate-200 bg-white px-8 py-16 text-center">
+                    <h2 className="text-2xl font-bold text-slate-900">No matching documentation found</h2>
+                    <p className="mt-2 text-sm font-medium text-slate-500">
+                        Try a broader keyword or clear the search to browse all documentation.
+                    </p>
+                </div>
+            )}
 
             <style dangerouslySetInnerHTML={{ __html: `
                 .documentation-content h2 {

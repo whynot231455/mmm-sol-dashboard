@@ -1,0 +1,12 @@
+{
+  "company_name": "Sol Analytics",
+  "website": "https://solanalytics.com",
+  "mission": "Paving the way for Insights, Intelligence, and Infrastructure by enabling organizations to transition towards fact-based, data-driven decision-making through a Single Version of Truth (SVOT).",
+  "solutions": {
+    "insights": "Fact-based, data-driven decision-making through SVOT.",
+    "intelligence": "Advanced Predictive and Prescriptive Analytics for strategic foresight and agility.",
+    "infrastructure": "Robust Data Platforms, Cloud Migration, and Digital Transformation."
+  },
+  "expertise": ["Consulting", "Technology", "Data Science"],
+  "about": "Sol Analytics is a leading consulting company focused on Research, Marketing Analytics, LLM services, and digital transformation. It assists businesses in achieving growth by uncovering hidden insights and articulating business value effectively."
+}

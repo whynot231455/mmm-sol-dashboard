@@ -7,11 +7,12 @@ interface SimulationParams {
     excludeOutliers: boolean;
 }
 
-export const usePredictData = (params: SimulationParams) => {
+export const usePredictData = (params: SimulationParams, options?: { enabled?: boolean }) => {
     const { rawData, mapping } = useDataStore();
+    const enabled = options?.enabled ?? true;
 
     return useMemo(() => {
-        if (!rawData.length || !mapping.date || !mapping.revenue || !mapping.spend) {
+        if (!enabled || !rawData.length || !mapping.date || !mapping.revenue || !mapping.spend) {
             return null;
         }
 
@@ -127,5 +128,5 @@ export const usePredictData = (params: SimulationParams) => {
             heatmap
         };
 
-    }, [rawData, mapping, params]);
+    }, [rawData, mapping, params, enabled]);
 };

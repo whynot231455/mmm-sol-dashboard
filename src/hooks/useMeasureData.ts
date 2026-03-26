@@ -7,12 +7,13 @@ interface MeasureDataFilters {
     dateRange?: string; // 'last30', 'last90', 'all'
 }
 
-export const useMeasureData = (filters?: MeasureDataFilters) => {
+export const useMeasureData = (filters?: MeasureDataFilters, options?: { enabled?: boolean }) => {
     const { rawData, mapping } = useDataStore();
+    const enabled = options?.enabled ?? true;
 
     // Extract Unique Values for Dropdowns - only compute when rawData or mapping changes
     const availableFilters = useMemo(() => {
-        if (!rawData.length || !mapping.country || !mapping.channel) {
+        if (!enabled || !rawData.length || !mapping.country || !mapping.channel) {
             return { countries: ['All'], channels: ['All'] };
         }
         const countries = new Set<string>();
@@ -29,10 +30,10 @@ export const useMeasureData = (filters?: MeasureDataFilters) => {
             countries: ['All', ...Array.from(countries).sort()],
             channels: ['All', ...Array.from(channels).sort()]
         };
-    }, [rawData, mapping.country, mapping.channel]);
+    }, [rawData, mapping.country, mapping.channel, enabled]);
 
     const metrics = useMemo(() => {
-        if (!rawData.length || !mapping.revenue || !mapping.spend || !mapping.date) {
+        if (!enabled || !rawData.length || !mapping.revenue || !mapping.spend || !mapping.date) {
             return null;
         }
 
@@ -149,7 +150,7 @@ export const useMeasureData = (filters?: MeasureDataFilters) => {
             channels: Object.values(channelData).sort((a, b) => b.revenue - a.revenue),
             filters: availableFilters
         };
-    }, [rawData, mapping, filters, availableFilters]);
+    }, [rawData, mapping, filters, availableFilters, enabled]);
 
     return metrics;
 };
