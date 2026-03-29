@@ -3,10 +3,6 @@ import { useOptimizeData } from "../hooks/useOptimizeData";
 import { BudgetSimulationSidebar } from "../components/BudgetSimulationSidebar";
 import { RevenueImpactChart } from "../components/RevenueImpactChart";
 import { ReallocationTable } from "../components/ReallocationTable";
-import { 
-  SimulationPanel, 
-  type SimulationParams 
-} from "../components/SimulationPanel";
 import { KPICard } from "../components/KPICard";
 import { formatSmartCurrency } from "../lib/formatters";
 import { DollarSign, Target, TrendingUp, Save, Play } from "lucide-react";
@@ -23,11 +19,6 @@ export const OptimizePage = () => {
     weights: Record<string, number>;
   }>({ budget: 0, weights: {} });
   const [selectedPeriod, setSelectedPeriod] = useState<number>(1);
-  const [simulationParams, setSimulationParams] = useState<SimulationParams>({
-    spendChange: 0,
-    seasonality: 1,
-    excludeOutliers: false,
-  });
 
   // Initialize Budget and Weights from Data
   useEffect(() => {
@@ -102,7 +93,7 @@ export const OptimizePage = () => {
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500 pb-12">
+    <div className="px-8 pt-8 space-y-8 animate-in fade-in duration-500 pb-12">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -147,11 +138,6 @@ export const OptimizePage = () => {
               // Trigger useEffect again or manual reset logic
               window.location.reload(); // Simple brute tool for reset in demo
             }}
-          />
-          <SimulationPanel
-            params={simulationParams}
-            onChange={setSimulationParams}
-            onRecalculate={handleApply}
           />
         </div>
 
