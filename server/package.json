@@ -1,7 +1,8 @@
 {
   "name": "server",
   "version": "1.0.0",
-  "main": "index.js",
+  "type": "module",
+  "main": "index.ts",
   "scripts": {
     "start": "tsx index.ts",
     "ingest": "tsx agent/scripts/ingest.ts",

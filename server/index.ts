@@ -10,7 +10,9 @@ const app = express();
 const port = process.env.PORT || 3001;
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.text({ type: 'text/csv', limit: '50mb' }));
+import axios from 'axios';
 
 // 1. Create a task (Planning Phase)
 app.post('/api/agent/create', async (req, res) => {
@@ -67,6 +69,63 @@ app.post('/api/agent/run-stream', async (req, res) => {
     console.error(`Task ${taskId} streaming error:`, err);
     res.write(`data: ${JSON.stringify({ error: (err as Error).message })}\n\n`);
     res.end();
+  }
+});
+
+app.post('/api/dataiku/upload', async (req, res) => {
+  const csvData = req.body;
+  const fileName = req.query.fileName || `upload_${Date.now()}.csv`;
+
+  if (!csvData) {
+    return res.status(400).json({ error: 'No CSV data provided' });
+  }
+
+  const {
+    DATAIKU_BASE_URL,
+    DATAIKU_API_KEY,
+    DATAIKU_PROJECT_KEY,
+    DATAIKU_FOLDER_ID
+  } = process.env;
+
+  if (!DATAIKU_BASE_URL || !DATAIKU_API_KEY || !DATAIKU_PROJECT_KEY || !DATAIKU_FOLDER_ID) {
+    return res.status(500).json({ error: 'Dataiku configuration missing from .env' });
+  }
+
+  try {
+    const url = `${DATAIKU_BASE_URL}/dip/publicapi/projects/${DATAIKU_PROJECT_KEY}/managedfolders/${DATAIKU_FOLDER_ID}/contents/${fileName}`;
+    const authHeader = `Basic ${Buffer.from(DATAIKU_API_KEY + ':').toString('base64')}`;
+
+    console.log('Uploading to:', url);
+
+    // ✅ Use FormData — Dataiku requires multipart/form-data
+    const FormData = (await import('form-data')).default;
+    const formData = new FormData();
+
+    // Convert CSV string to Buffer and append as file
+    const fileBuffer = Buffer.from(csvData, 'utf-8');
+    formData.append('file', fileBuffer, {
+      filename: fileName as string,
+      contentType: 'text/csv',
+    });
+
+    await axios.post(url, formData, {
+      headers: {
+        'Authorization': authHeader,
+        ...formData.getHeaders(),  // ✅ Sets Content-Type: multipart/form-data with boundary
+      }
+    });
+
+    res.json({
+      success: true,
+      message: `File ${fileName} uploaded to Dataiku folder ${DATAIKU_FOLDER_ID}`
+    });
+
+  } catch (err: any) {
+    console.error('Dataiku upload error:', err.response?.data || err.message);
+    res.status(500).json({
+      error: 'Failed to upload to Dataiku',
+      details: err.response?.data || err.message
+    });
   }
 });
 

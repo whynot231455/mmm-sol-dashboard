@@ -29,7 +29,7 @@ interface ColumnMapping {
 
 export type PageType =
     | 'login' | 'signup' | 'measure' | 'predict' | 'optimize' | 'chat'
-    | 'import' | 'connect' | 'transform'
+    | 'import' | 'connect' | 'transform' | 'dss-test'
     | 'train' | 'validate' | 'calibrate' | 'geolift' | 'pipelines'
     | 'video-tutorials' | 'documentation';
 

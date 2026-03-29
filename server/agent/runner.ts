@@ -8,7 +8,7 @@ import * as fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const __filename = fileURLToPath(import.meta.url);
+const __filename = fileURLToPath(import.meta.url!);
 const __dirname = path.dirname(__filename);
 const companyKnowledge = JSON.parse(fs.readFileSync(path.join(__dirname, 'knowledge', 'company.json'), 'utf-8'));
 
@@ -16,7 +16,7 @@ dotenv.config();
 
 const supabase = createClient(
   process.env.SUPABASE_URL!,
-  process.env.SUPABASE_KEY!
+  process.env.SUPABASE_ANON_KEY! || process.env.SUPABASE_KEY!
 );
 
 interface OllamaStreamChunk {
@@ -185,7 +185,7 @@ export async function runAgent(
         try {
           toolInput = JSON.parse(toolInput);
         } catch {
-          console.debug(`Tool input for ${toolName} is not JSON, using raw string.`);
+          // Silent fallback for non-JSON tool input
         }
       }
 

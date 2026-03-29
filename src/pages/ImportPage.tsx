@@ -15,6 +15,7 @@ import { parseCSV } from "../lib/csvParser";
 import { ColumnMapping } from "../components/ColumnMapping";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import axios from "axios";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -24,6 +25,8 @@ export const ImportPage = () => {
   const { setData, rawData, headers, mapping } = useDataStore();
   const [isDragging, setIsDragging] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isUploadingToDataiku, setIsUploadingToDataiku] = useState(false);
+  const [dataikuResult, setDataikuResult] = useState<{ success: boolean; message: string } | null>(null);
 
   const handleFile = useCallback(
     async (file: File) => {
@@ -41,10 +44,58 @@ export const ImportPage = () => {
         setError(result.error);
       } else {
         setData(result.data, result.headers);
+        // Start Dataiku upload
+        uploadToDataiku(file);
       }
     },
     [setData],
   );
+
+  const uploadToDataiku = async (file: File) => {
+    setIsUploadingToDataiku(true);
+    setDataikuResult(null);
+
+    try {
+      // Read file as text using Promise-based FileReader
+      const csvContent = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const result = e.target?.result;
+          if (result) resolve(result as string);
+          else reject(new Error('Failed to read file'));
+        };
+        reader.onerror = () => reject(new Error('FileReader error'));
+        reader.readAsText(file);
+      });
+
+      const backendUrl = import.meta.env.VITE_AGENT_BACKEND_URL;
+      if (!backendUrl) {
+        setDataikuResult({ success: false, message: 'VITE_AGENT_BACKEND_URL is not set in .env' });
+        return;
+      }
+
+      const response = await axios.post(
+        `${backendUrl}/api/dataiku/upload?fileName=${encodeURIComponent(file.name)}`,
+        csvContent,
+        {
+          headers: {
+            'Content-Type': 'text/csv',
+          },
+        }
+      );
+
+      setDataikuResult({ success: true, message: response.data.message });
+
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.details || err.message;
+      setDataikuResult({
+        success: false,
+        message: typeof errorMessage === 'object' ? JSON.stringify(errorMessage) : errorMessage,
+      });
+    } finally {
+      setIsUploadingToDataiku(false);
+    }
+  };
 
   const onDrop = useCallback(
     (e: React.DragEvent) => {
@@ -179,6 +230,33 @@ export const ImportPage = () => {
           <div className="absolute bottom-4 bg-red-50 border border-red-100 text-red-600 px-4 py-2 rounded-lg flex items-center gap-2 text-sm">
             <X className="w-4 h-4" />
             {error}
+          </div>
+        )}
+
+        {/* Dataiku Upload Status */}
+        {(isUploadingToDataiku || dataikuResult) && (
+          <div className={cn(
+            "absolute bottom-4 px-4 py-2 rounded-lg flex items-center gap-2 text-sm border shadow-sm transition-all",
+            isUploadingToDataiku ? "bg-indigo-50 border-indigo-100 text-indigo-600 animate-pulse" :
+            dataikuResult?.success ? "bg-green-50 border-green-100 text-green-600" :
+            "bg-red-50 border-red-100 text-red-600"
+          )}>
+            {isUploadingToDataiku ? (
+              <>
+                <div className="w-3 h-3 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+                Uploading to Dataiku Managed Folder...
+              </>
+            ) : dataikuResult?.success ? (
+              <>
+                <CheckCircle2 className="w-4 h-4" />
+                {String(dataikuResult.message)}
+              </>
+            ) : (
+              <>
+                <ShieldAlert className="w-4 h-4" />
+                Dataiku Error: {typeof dataikuResult?.message === 'object' ? JSON.stringify(dataikuResult.message) : String(dataikuResult?.message || 'Unknown Error')}
+              </>
+            )}
           </div>
         )}
       </div>
