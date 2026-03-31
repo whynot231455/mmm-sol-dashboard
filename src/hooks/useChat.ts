@@ -3,6 +3,7 @@ import { useDataStore, type Message, type ChatAttachment, type ChatSession } fro
 import { useMeasureData } from "./useMeasureData";
 import { type AgentTask, type TaskStep } from "../types/agent";
 import { supabase } from "../lib/supabase";
+import type { MeridianVariableStat } from "../services/meridianApi";
 
 const BACKEND_URL = 'http://localhost:3001';
 
@@ -192,11 +193,7 @@ export const useChat = () => {
         });
       });
 
-      return mergedSessions.filter(
-        (localSession) =>
-          remoteSessions.some((remoteSession) => remoteSession.id === localSession.id) ||
-          localSession.messages.length > 0
-      );
+      return mergedSessions.sort((a, b) => b.lastUpdated - a.lastUpdated);
     },
     []
   );
@@ -237,8 +234,6 @@ export const useChat = () => {
         if (!isMounted || !remoteSessions) return;
 
         if (remoteSessions.length === 0) {
-          // If remote is empty, we should clear local sessions too (except for those being actively created)
-          setChatSessions([]);
           setIsBootstrappingSessions(false);
           return;
         }
@@ -375,9 +370,16 @@ export const useChat = () => {
 
       // 3. Run agent on backend
       // Prepare context to send
+      const { meridianResults } = useDataStore.getState();
       const context = {
         docs: "", // Documentation is now handled by RAG on the backend
-        metrics: measureData ? `Current Revenue: $${measureData.kpi.revenue.toLocaleString()}, Spend: $${measureData.kpi.spend.toLocaleString()}` : "No metrics loaded"
+        metrics: measureData ? `Current Revenue: $${measureData.kpi.revenue.toLocaleString()}, Spend: $${measureData.kpi.spend.toLocaleString()}` : "No metrics loaded",
+        meridianResults: meridianResults ? {
+            rSquared: meridianResults.metrics.rSquared.toFixed(4),
+            mape: meridianResults.metrics.mape.toFixed(2) + "%",
+            modelStatus: meridianResults.modelInfo.status,
+            topChannels: meridianResults.variableStats.slice(0, 3).map((s: MeridianVariableStat) => `${s.variable} (Coef: ${s.coefficient})`).join(", ")
+        } : null
       };
 
       const abortController = new AbortController();
@@ -599,7 +601,7 @@ export const useChat = () => {
       if (error) console.error(error);
     });
 
-    setChatSessions([newSession, ...chatSessions]);
+    setChatSessions((prevSessions) => [newSession, ...prevSessions]);
     setActiveChatSessionId(newSession.id);
   };
 

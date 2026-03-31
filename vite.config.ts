@@ -8,4 +8,15 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom', 'lucide-react'],
+          charts: ['recharts'],
+          utils: ['axios', '@supabase/supabase-js', 'zustand', 'idb-keyval', 'papaparse'],
+        },
+      },
+    },
+  },
 })

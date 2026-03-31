@@ -11,10 +11,36 @@ export const useDashboardSync = () => {
     transformSettings, 
     filters: globalFilters, 
     activePage, 
-    isLoaded
+    isLoaded,
+    isProcessing,
+    setIsProcessing,
+    setMeridianResults
   } = useDataStore();
 
   const isDashboardPage = ['measure', 'predict', 'optimize', 'validate', 'train'].includes(activePage);
+  
+  // Polling for Meridian results when processing
+  useEffect(() => {
+    if (!isProcessing) return;
+
+    const pollResults = async () => {
+      try {
+        const { meridianApi } = await import('../services/meridianApi');
+        const results = await meridianApi.getLatestResults();
+        
+        // If results are fresh and status is stable, stop processing
+        if (results && results.modelInfo.status === 'STABLE') {
+          setMeridianResults(results);
+          setIsProcessing(false);
+        }
+      } catch (err) {
+        console.error('Polling failed:', err);
+      }
+    };
+
+    const pollInterval = setInterval(pollResults, 5000);
+    return () => clearInterval(pollInterval);
+  }, [isProcessing, setIsProcessing, setMeridianResults]);
   
   // Get data from all pages with default/current settings - ONLY when on dashboard pages
   const measureData = useMeasureData(globalFilters, { enabled: isDashboardPage });
@@ -54,13 +80,17 @@ export const useDashboardSync = () => {
       };
 
       try {
-        await supabase
+        const { error } = await supabase
           .from('dashboard_state')
           .upsert({ 
             key: 'current_dashboard', 
             data: stateToSync,
             updated_at: new Date().toISOString()
           }, { onConflict: 'key' });
+          
+        if (error) {
+          console.error('Supabase sync error details:', error);
+        }
       } catch (err) {
         console.error('Failed to sync dashboard state:', err);
       }

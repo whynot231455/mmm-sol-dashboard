@@ -16,6 +16,7 @@ import {
   Menu,
   X,
   PanelLeftClose,
+  Loader2,
 } from "lucide-react";
 import { useState } from "react";
 import { clsx, type ClassValue } from "clsx";
@@ -76,7 +77,7 @@ const SidebarSection = ({ title }: { title: string }) => (
 );
 
 export const Sidebar = () => {
-  const { activePage, setActivePage } = useDataStore();
+  const { activePage, setActivePage, isProcessing } = useDataStore();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
 
@@ -235,7 +236,31 @@ export const Sidebar = () => {
         ))}
       </div>
 
+      {isProcessing && (
+        <div className={cn("px-4 mb-4 animate-in fade-in slide-in-from-bottom-4 duration-500", isCollapsed && "px-2")}>
+          <div className={cn(
+            "bg-indigo-50 border border-indigo-100 rounded-xl p-3 flex flex-col gap-2",
+            isCollapsed && "items-center"
+          )}>
+            <div className="flex items-center gap-2">
+              <div className="relative">
+                <Loader2 size={14} className="text-brand-primary animate-spin" />
+                <div className="absolute inset-0 bg-brand-primary/20 rounded-full animate-ping opacity-50" />
+              </div>
+              {!isCollapsed && <span className="text-[10px] font-black text-indigo-900 uppercase tracking-widest">Model Training</span>}
+            </div>
+            {!isCollapsed && <div className="h-1 w-full bg-indigo-100 rounded-full overflow-hidden">
+               <div className="h-full bg-brand-primary animate-[shimmer_2s_infinite_linear] w-[60%]" style={{
+                 background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent)',
+                 backgroundSize: '200% 100%'
+               }} />
+            </div>}
+          </div>
+        </div>
+      )}
+
       <div className={cn("border-t border-slate-100 p-4", isCollapsed ? "lg:px-3" : "space-y-3")}>
+
         <div className={cn("flex items-center", isCollapsed ? "justify-center" : "gap-3 px-2")}>
           <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-[#4a151b] to-[#871F1E] text-xs font-black text-white shadow-sm">
             JD

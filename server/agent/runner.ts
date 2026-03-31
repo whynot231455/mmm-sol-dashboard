@@ -348,17 +348,6 @@ Final Polished Answer:
       status: 'completed',
     }).eq('id', taskId);
 
-    // Persist messages to chat_messages table for long-term memory
-    if (task.session_id) {
-      console.log('Attempting to persist messages for session:', task.session_id);
-      const insertPayload = [
-        { session_id: task.session_id, role: 'user', content: task.goal },
-        { session_id: task.session_id, role: 'assistant', content: cleanedAnswer }
-      ];
-      const { error: persistError } = await supabase.from('chat_messages').insert(insertPayload);
-      if (persistError) console.error('Failed to persist chat messages:', persistError);
-    }
-
     // Insert synthesis step for audit trail
     await supabase.from('agent_steps').insert({
       task_id: taskId,

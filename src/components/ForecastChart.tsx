@@ -54,7 +54,8 @@ export const ForecastChart = ({ data }: ForecastChartProps) => {
         </div>
       </div>
 
-      <ResponsiveContainer width="100%" height="85%">
+      <div className="h-[300px] w-full">
+        <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
         <ComposedChart
           data={chartData}
           margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
@@ -161,7 +162,8 @@ export const ForecastChart = ({ data }: ForecastChartProps) => {
             connectNulls={false}
           />
         </ComposedChart>
-      </ResponsiveContainer>
+        </ResponsiveContainer>
+      </div>
     </div>
   );
 };

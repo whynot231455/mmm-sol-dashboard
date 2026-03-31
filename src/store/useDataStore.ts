@@ -3,6 +3,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import type { StateStorage } from 'zustand/middleware';
 import { get, set as idbSet, del } from 'idb-keyval';
 import { supabase } from '../lib/supabase';
+import type { MeridianResults } from '../services/meridianApi';
 
 // Custom storage for Zustand persistence using IndexedDB (via idb-keyval)
 // This enables storing large datasets that exceed localStorage's ~5MB limit.
@@ -31,7 +32,8 @@ export type PageType =
     | 'login' | 'signup' | 'measure' | 'predict' | 'optimize' | 'chat'
     | 'import' | 'connect' | 'transform' | 'dss-test'
     | 'train' | 'validate' | 'calibrate' | 'geolift' | 'pipelines'
-    | 'video-tutorials' | 'documentation';
+    | 'video-tutorials' | 'documentation' | 'success';
+
 
 interface Filters {
     country: string;
@@ -148,6 +150,9 @@ interface DataState {
     channelColors: Record<string, string>;
     chatSessions: ChatSession[];
     activeChatSessionId: string | null;
+    meridianResults: MeridianResults | null;
+    isProcessing: boolean;
+
 
     // Actions
     setData: (data: Record<string, unknown>[], headers: string[]) => void;
@@ -161,6 +166,9 @@ interface DataState {
     setChannelColor: (channel: string, color: string) => void;
     setChatSessions: (sessions: ChatSession[] | ((prev: ChatSession[]) => ChatSession[])) => void;
     setActiveChatSessionId: (id: string | null) => void;
+    setMeridianResults: (results: MeridianResults | null) => void;
+    setIsProcessing: (isProcessing: boolean) => void;
+
     addMessageToSession: (sessionId: string, message: Message) => void;
     updateMessageInSession: (sessionId: string, messageId: string, content: string) => void;
     updateChatSession: (sessionId: string, updates: Partial<ChatSession>) => void;
@@ -193,6 +201,19 @@ const syncSessionMetadata = (session: ChatSession) => {
     }, { onConflict: 'id' }).then(({ error }) => {
         if (error) {
             console.error('Failed to sync session', error);
+        }
+    });
+};
+
+const syncSessionMessage = (sessionId: string, message: Message) => {
+    void supabase.from('chat_messages').upsert({
+        id: message.id,
+        session_id: sessionId,
+        role: message.role,
+        content: message.content,
+    }, { onConflict: 'id' }).then(({ error }) => {
+        if (error) {
+            console.error('Failed to sync chat message', error);
         }
     });
 };
@@ -350,6 +371,9 @@ export const useDataStore = create<DataState>()(
             },
             chatSessions: [],
             activeChatSessionId: null,
+            meridianResults: null,
+            isProcessing: false,
+
 
             setData: (data, headers) => set((state) => {
                 const newMapping = { ...state.mapping };
@@ -439,6 +463,8 @@ export const useDataStore = create<DataState>()(
                 chatSessions: typeof sessions === 'function' ? sessions(state.chatSessions) : sessions
             })),
             setActiveChatSessionId: (id) => set({ activeChatSessionId: id }),
+            setMeridianResults: (results) => set({ meridianResults: results }),
+            setIsProcessing: (isProcessing) => set({ isProcessing }),
             addMessageToSession: (sessionId, message) => {
                 let updatedSession: ChatSession | null = null;
                 set((state) => ({
@@ -450,20 +476,33 @@ export const useDataStore = create<DataState>()(
                 }));
                 if (updatedSession) {
                     syncSessionMetadata(updatedSession);
+                    syncSessionMessage(sessionId, message);
                 }
             },
             updateMessageInSession: (sessionId, messageId, content) => {
+                let updatedMessage: Message | null = null;
                 set((state) => ({
                     chatSessions: state.chatSessions.map(s => 
                         s.id === sessionId 
                             ? { 
                                 ...s, 
-                                messages: s.messages.map(m => m.id === messageId ? { ...m, content } : m),
+                                messages: s.messages.map(m => {
+                                    if (m.id !== messageId) return m;
+                                    updatedMessage = { ...m, content };
+                                    return updatedMessage;
+                                }),
                                 lastUpdated: Date.now() 
                             }
                             : s
                     )
                 }));
+                const updatedSession = useDataStore.getState().chatSessions.find((session) => session.id === sessionId) ?? null;
+                if (updatedSession) {
+                    syncSessionMetadata(updatedSession);
+                }
+                if (updatedMessage) {
+                    syncSessionMessage(sessionId, updatedMessage);
+                }
             },
             updateChatSession: (sessionId, updates) => {
                 let updatedSession: ChatSession | null = null;
@@ -575,7 +614,10 @@ export const useDataStore = create<DataState>()(
                     'Bing_Search_NonBrand': '#008B8B',
                     'Bing_Search_Brand': '#00CED1',
                     'Adtraction_Affiliate': '#4169E1'
-                }
+                },
+                meridianResults: null,
+                isProcessing: false
+
             }),
         }),
         {
@@ -607,6 +649,9 @@ export const useDataStore = create<DataState>()(
                 channelColors: state.channelColors,
                 chatSessions: state.chatSessions.map(stripSessionAttachmentData),
                 activeChatSessionId: state.activeChatSessionId,
+                meridianResults: state.meridianResults,
+                isProcessing: state.isProcessing,
+
             }),
         }
     )

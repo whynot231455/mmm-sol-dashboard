@@ -14,6 +14,13 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.text({ type: 'text/csv', limit: '50mb' }));
 import axios from 'axios';
 
+interface AxiosLikeError {
+  message: string;
+  response?: {
+    data?: unknown;
+  };
+}
+
 // 1. Create a task (Planning Phase)
 app.post('/api/agent/create', async (req, res) => {
   const { goal, sessionId } = req.body;
@@ -120,11 +127,12 @@ app.post('/api/dataiku/upload', async (req, res) => {
       message: `File ${fileName} uploaded to Dataiku folder ${DATAIKU_FOLDER_ID}`
     });
 
-  } catch (err: any) {
-    console.error('Dataiku upload error:', err.response?.data || err.message);
+  } catch (err: unknown) {
+    const error = err as AxiosLikeError;
+    console.error('Dataiku upload error:', error.response?.data || error.message);
     res.status(500).json({
       error: 'Failed to upload to Dataiku',
-      details: err.response?.data || err.message
+      details: error.response?.data || error.message
     });
   }
 });

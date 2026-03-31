@@ -1,6 +1,15 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 
+interface AxiosLikeError {
+  message: string;
+  response?: {
+    data?: {
+      details?: unknown;
+    };
+  };
+}
+
 const FileUploader: React.FC = () => {
   const [file, setFile] = useState<File | null>(null);
   const [status, setStatus] = useState<string>('');
@@ -44,7 +53,7 @@ const FileUploader: React.FC = () => {
         return;
       }
 
-      const response = await axios.post(
+      await axios.post(
         `${backendUrl}/api/dataiku/upload?fileName=${encodeURIComponent(file.name)}`,
         csvContent,
         {
@@ -54,11 +63,12 @@ const FileUploader: React.FC = () => {
         }
       );
 
-      console.log('Upload response:', response.data);
+
       setStatus(`✅ "${file.name}" uploaded successfully to Dataiku!`);
 
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.details || err.message;
+    } catch (err: unknown) {
+      const error = err as AxiosLikeError;
+      const errorMessage = error.response?.data?.details || error.message;
       setStatus(`❌ Upload failed: ${typeof errorMessage === 'object' ? JSON.stringify(errorMessage) : errorMessage}`);
     } finally {
       setLoading(false); // ✅ Always runs

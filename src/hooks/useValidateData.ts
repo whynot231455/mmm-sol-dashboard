@@ -1,16 +1,47 @@
 import { useMemo } from 'react';
 import { useDataStore } from '../store/useDataStore';
+import type { MeridianResults, MeridianVariableStat } from '../services/meridianApi';
+
+interface ValidationChartPoint {
+    date: Date;
+    actual: number;
+    predicted: number;
+}
+
+interface ValidationResidualPoint {
+    predicted: number;
+    residual: number;
+}
 
 export const useValidateData = (options?: { enabled?: boolean }) => {
-    const { rawData, mapping } = useDataStore();
+    const { rawData, mapping, meridianResults } = useDataStore();
     const enabled = options?.enabled ?? true;
 
     return useMemo(() => {
-        if (!enabled || !rawData.length || !mapping.date || !mapping.revenue || !mapping.channel) {
+        if (!enabled) return null;
+
+        // prioritize data from store if it exists
+        if (meridianResults) {
+            return {
+                ...meridianResults,
+                // Ensure chartData matches the component expectation (dates as Date objects if needed)
+                chartData: meridianResults.chartData.map((d): ValidationChartPoint => ({
+                    ...d,
+                    date: new Date(d.date)
+                })),
+                residuals: meridianResults.chartData.map((d): ValidationResidualPoint => ({
+                    predicted: d.predicted,
+                    residual: d.actual - d.predicted
+                }))
+            } as MeridianResults & { chartData: ValidationChartPoint[]; residuals: ValidationResidualPoint[] };
+        }
+
+        if (!rawData.length || !mapping.date || !mapping.revenue || !mapping.channel) {
             return null;
         }
 
-        // Aggregate data by date for actual vs predicted
+        // --- Mock Logic (Fallback) ---
+        
         const dateMap = new Map<string, { date: Date; actual: number; predicted: number }>();
 
         rawData.forEach(row => {
@@ -34,7 +65,6 @@ export const useValidateData = (options?: { enabled?: boolean }) => {
             entry.actual += revenue;
         });
 
-        // Deterministic seeded helper to avoid impure Math.random calls during render
         const seeded = (key: string) => {
             let h = 2166136261 >>> 0;
             for (let i = 0; i < key.length; i++) {
@@ -43,58 +73,48 @@ export const useValidateData = (options?: { enabled?: boolean }) => {
             return (h % 10000) / 10000;
         };
 
-        // Generate mock predictions (in real scenario, this would come from trained model)
         const chartData = Array.from(dateMap.values())
             .sort((a, b) => a.date.getTime() - b.date.getTime())
             .map(d => ({
                 ...d,
-                // Mock prediction with some noise (±5%) using deterministic seed
                 predicted: d.actual * (0.95 + seeded(d.date.toISOString()) * 0.1)
             }));
 
-        // Calculate residuals for residual plot
         const residuals = chartData.map(d => ({
             predicted: d.predicted,
             residual: d.actual - d.predicted
         }));
 
-        // Calculate model metrics
         const actualValues = chartData.map(d => d.actual);
         const mean = actualValues.reduce((sum, val) => sum + val, 0) / actualValues.length;
 
-        // R-Squared
         const ssTotal = actualValues.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0);
         const ssResidual = chartData.reduce((sum, d) => sum + Math.pow(d.actual - d.predicted, 2), 0);
         const rSquared = 1 - (ssResidual / ssTotal);
 
-        // Adjusted R-Squared (mock - assumes 10 variables)
         const n = chartData.length;
-        const k = 10; // number of predictors (mock)
+        const k = 10; 
         const adjustedRSquared = 1 - ((1 - rSquared) * (n - 1) / (n - k - 1));
 
-        // MAPE (Mean Absolute Percentage Error)
         const mape = chartData.reduce((sum, d) => {
             return sum + Math.abs((d.actual - d.predicted) / d.actual);
         }, 0) / chartData.length * 100;
 
-        // Durbin-Watson (mock - simplified)
-        const durbinWatson = 1.95; // Mock value (should be calculated from residuals)
+        const durbinWatson = 1.95; 
 
-        // Get unique channels for variable statistics
         const channels = Array.from(
             new Set(rawData.map(row => row[mapping.channel!] as string).filter(Boolean))
         );
 
-        // Mock variable statistics
         const variableStats = channels.map((channel) => ({
             variable: channel,
-            coefficient: (seeded(channel + '_coef') * 3000 - 1000).toFixed(2),
-            stdError: (seeded(channel + '_se') * 200).toFixed(2),
-            tStatistic: (seeded(channel + '_t') * 40 - 5).toFixed(2),
+            coefficient: Number((seeded(channel + '_coef') * 3000 - 1000).toFixed(2)),
+            stdError: Number((seeded(channel + '_se') * 200).toFixed(2)),
+            tStatistic: Number((seeded(channel + '_t') * 40 - 5).toFixed(2)),
             pValue: seeded(channel + '_p') < 0.7 ? 0.001 : seeded(channel + '_p2') * 0.5,
-            vif: (1 + seeded(channel + '_v') * 3).toFixed(2),
+            vif: Number((1 + seeded(channel + '_v') * 3).toFixed(2)),
             confidence: seeded(channel + '_c') > 0.3 ? 95 : 90
-        }));
+        })) as MeridianVariableStat[];
 
         return {
             metrics: {
@@ -112,5 +132,5 @@ export const useValidateData = (options?: { enabled?: boolean }) => {
                 lastUpdated: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
             }
         };
-    }, [rawData, mapping, enabled]);
+    }, [rawData, mapping, enabled, meridianResults]);
 };
