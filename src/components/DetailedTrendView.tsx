@@ -557,9 +557,9 @@ export const DetailedTrendView = ({ onBack }: DetailedTrendViewProps) => {
               />
               <Tooltip
                 formatter={(
-                  value: number | undefined,
+                  value: unknown,
                   name: string | undefined,
-                ) => [formatSmartCurrency(value ?? 0), name ?? ""]}
+                ) => [formatSmartCurrency(Number(value ?? 0)), name ?? ""]}
                 contentStyle={{
                   backgroundColor: "#fff",
                   borderRadius: "12px",

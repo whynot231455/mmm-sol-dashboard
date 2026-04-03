@@ -278,10 +278,10 @@ export const TrendChart = ({ data, onExpand }: TrendChartProps) => {
               tickFormatter={(value) => formatSmartCurrency(value)}
             />
             <Tooltip
-              formatter={(
-                value: number | undefined,
-                name: string | undefined,
-              ) => [formatSmartCurrency(value ?? 0), name ?? ""]}
+              formatter={(value: any, name: any) => [ // eslint-disable-line @typescript-eslint/no-explicit-any
+                formatSmartCurrency(Number(value ?? 0)),
+                String(name ?? ""),
+              ]}
               contentStyle={{
                 backgroundColor: "#fff",
                 borderRadius: "12px",

@@ -254,7 +254,7 @@ export const TransformPage = () => {
                                 contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
                                 labelStyle={{ fontWeight: 800, color: '#0f172a', marginBottom: '4px' }}
                                 itemStyle={{ color: '#1e293b', fontWeight: 600, textTransform: 'capitalize' }}
-                                formatter={(value: number | string | undefined) => {
+                                formatter={(value: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
                                     const label = transformSettings?.primaryMetric === 'spend' ? 'Spend' : transformSettings?.primaryMetric === 'impressions' ? 'Impressions' : 'Clicks';
                                     if (value === undefined) return ['', label];
                                     return [`$${Number(value).toLocaleString()}`, label];
@@ -397,8 +397,8 @@ export const TransformPage = () => {
                                 contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
                                 labelStyle={{ fontWeight: 800, color: '#0f172a', marginBottom: '4px' }}
                                 itemStyle={{ color: '#1e293b', fontWeight: 600 }}
-                                formatter={(value: number | string | undefined, name: string | undefined) => {
-                                    const displayName = (name === 'raw' ? 'Raw Spend' : 'Adstock Decay') as string;
+                                formatter={(value: any, name: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
+                                    const displayName = String(name === 'raw' ? 'Raw Spend' : 'Adstock Decay');
                                     if (value === undefined) return ['', displayName];
                                     return [`$${Number(value).toLocaleString()}`, displayName];
                                 }}
@@ -482,8 +482,8 @@ export const TransformPage = () => {
                             <YAxis hide />
                             <Tooltip
                                 contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
-                                formatter={(value: number | string | undefined, name: string | undefined) => {
-                                    const displayName = (name === 'curve' ? 'Response Curve' : 'Observed Spend') as string;
+                                formatter={(value: any, name: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
+                                    const displayName = String(name === 'curve' ? 'Response Curve' : 'Observed Spend');
                                     if (value === undefined) return ['', displayName];
                                     return [
                                         name === 'curve' ? `${(Number(value) * 100).toFixed(1)}%` : `$${Number(value).toLocaleString()}`,
@@ -590,10 +590,10 @@ export const TransformPage = () => {
                                 contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)' }}
                                 labelStyle={{ fontWeight: 800, color: '#0f172a', marginBottom: '8px' }}
                                 itemStyle={{ fontWeight: 600, fontSize: '11px' }}
-                                formatter={(value: number | undefined, name: string | undefined) => {
+                                formatter={(value: any, name: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
                                     if (name === 'price') return [`$${Number(value ?? 0).toFixed(2)}`, 'Avg Price'];
                                     if (name === 'volume') return [Math.round(Number(value ?? 0)).toLocaleString(), 'Volume'];
-                                    return [value ?? '', name ?? ''];
+                                    return [String(value ?? ''), String(name ?? '')];
                                 }}
                             />
                             <Line yAxisId="left" type="monotone" dataKey="price" stroke="#871F1E" strokeWidth={3} dot={false} />

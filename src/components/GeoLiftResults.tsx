@@ -156,10 +156,10 @@ export const GeoLiftResults = ({
                   border: "1px solid #e2e8f0",
                   fontSize: "13px",
                 }}
-                formatter={(
-                  value: number | undefined,
-                  name: string | undefined,
-                ) => [`$${((value ?? 0) / 1000).toFixed(1)}K`, name]}
+                formatter={(value: any, name: any) => [ // eslint-disable-line @typescript-eslint/no-explicit-any
+                  `$${(Number(value ?? 0) / 1000).toFixed(1)}K`,
+                  name,
+                ]}
                 labelFormatter={(label: unknown) => {
                   const d = new Date(String(label));
                   return d.toLocaleDateString("en-US", {
@@ -263,7 +263,10 @@ export const GeoLiftResults = ({
                   border: "1px solid #e2e8f0",
                   fontSize: "13px",
                 }}
-                formatter={(value: number | undefined) => [`${value ?? 0}x`]}
+                formatter={(value: any, name: any) => [ // eslint-disable-line @typescript-eslint/no-explicit-any
+                  `${value ?? 0}x`,
+                  name,
+                ]}
               />
               <Legend wrapperStyle={{ fontSize: "12px" }} />
               <Bar

@@ -223,8 +223,9 @@ export const GeoLiftMonitor = ({
                 border: "1px solid #e2e8f0",
                 fontSize: "13px",
               }}
-              formatter={(value: number | undefined) => [
-                `$${((value ?? 0) / 1000).toFixed(1)}K`,
+              formatter={(value: any, name: any) => [ // eslint-disable-line @typescript-eslint/no-explicit-any
+                `$${(Number(value ?? 0) / 1000).toFixed(1)}K`,
+                name,
               ]}
             />
             <Legend wrapperStyle={{ fontSize: "12px" }} />

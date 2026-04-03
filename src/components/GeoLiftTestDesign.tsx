@@ -273,10 +273,10 @@ export const GeoLiftTestDesign = ({
                   border: "1px solid #e2e8f0",
                   fontSize: "13px",
                 }}
-                formatter={(
-                  value: number | undefined,
-                  name: string | undefined,
-                ) => [`${value ?? 0}%`, (name ?? "").replace("power", "α=0.")]}
+                formatter={(value: any, name: any) => [ // eslint-disable-line @typescript-eslint/no-explicit-any
+                  `${value ?? 0}%`,
+                  (String(name ?? "")).replace("power", "α=0."),
+                ]}
               />
               <Legend wrapperStyle={{ fontSize: "12px" }} />
               <ReferenceLine
