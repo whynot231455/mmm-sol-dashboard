@@ -136,8 +136,17 @@ def load_active_dataset(filename: str = "active_data.csv"):
 
 def save_prediction_results(results: Dict[str, Any], filename: str = "latest_predictions.json"):
     path = os.path.join(DATA_DIR, filename)
-    with open(path, "w") as f:
-        json.dump(results, f)
+    tmp_path = f"{path}.tmp"
+    try:
+        # Use a temporary file for atomic write to prevent corruption if server crashes
+        with open(tmp_path, "w") as f:
+            json.dump(results, f)
+        os.replace(tmp_path, path)
+    except Exception as e:
+        if os.path.exists(tmp_path):
+            try: os.remove(tmp_path)
+            except: pass
+        print(f"Error saving results: {e}")
     
     # Also sync to Supabase for Phase 3
     sync_results_to_supabase(results)
@@ -426,14 +435,25 @@ async def import_data(file: UploadFile = File(...)):
 async def get_latest_results():
     """Fetches the latest automated prediction results."""
     path = os.path.join(DATA_DIR, "latest_predictions.json")
-    if not os.path.exists(path):
+    
+    def internal_regenerate():
         df = load_active_dataset()
         analysis = generate_mock_results(df)
         save_prediction_results(analysis)
         return analysis
+
+    if not os.path.exists(path):
+        return internal_regenerate()
     
-    with open(path, "r") as f:
-        return json.load(f)
+    try:
+        with open(path, "r") as f:
+            return json.load(f)
+    except (json.JSONDecodeError, ValueError, FileNotFoundError) as e:
+        print(f"WARNING: Corrupt JSON results file at {path}. Regenerating dashboard state...")
+        if os.path.exists(path):
+            try: os.remove(path)
+            except: pass
+        return internal_regenerate()
 
 @app.post("/sync")
 async def manual_sync():
