@@ -1,4 +1,8 @@
+import logging
 import os
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+logger = logging.getLogger(__name__)
+
 os.environ.setdefault("JAX_PLATFORM_NAME", "gpu")
 
 import pandas as pd
@@ -16,10 +20,10 @@ import joblib
 import jax
 # Try to force JAX to see the GPU
 try:
-    print(f"JAX Devices: {jax.devices()}")
-    print(f"JAX Default Backend: {jax.default_backend()}")
+    logger.info(f"JAX Devices: {jax.devices()}")
+    logger.info(f"JAX Default Backend: {jax.default_backend()}")
 except Exception as e:
-    print(f"JAX GPU Initialization warning: {e}")
+    logger.warning(f"JAX GPU Initialization warning: {e}")
 
 # Load environment variables
 load_dotenv()
@@ -50,15 +54,15 @@ def init_supabase():
     if url and key:
         try:
              supabase = create_client(url, key)
-             print(f"Supabase client initialized successfully at {url}")
+             logger.info(f"Supabase client initialized successfully at {url}")
              return True
         except Exception as e:
-             print(f"Supabase init error: {e}")
+             logger.warning(f"Supabase init error: {e}")
     return False
 
 # Trigger initialization
 if not init_supabase():
-    print("WARNING: Supabase keys not found. Dashboard sync will be disabled.")
+    logger.warning("WARNING: Supabase keys not found. Dashboard sync will be disabled.")
 
 app = FastAPI(title="Meridian MMM Python Backend")
 
@@ -90,7 +94,7 @@ class PredictSchema(BaseModel):
 def sync_results_to_supabase(results: Dict[str, Any]):
     """Syncs results to the dashboard_state table for cross-platform access."""
     if not supabase:
-        print("Supabase client not initialized. Skipping sync.")
+        logger.info("Supabase client not initialized. Skipping sync.")
         return False
     
     try:
@@ -112,15 +116,15 @@ def sync_results_to_supabase(results: Dict[str, Any]):
         try:
             response = supabase.table("dashboard_state").upsert(data, on_conflict="key").execute()
             if hasattr(response, 'error') and response.error:
-                 print(f"Supabase record error: {response.error}")
+                 logger.warning(f"Supabase record error: {response.error}")
                  return False
             return True
         except Exception as api_error:
-            print(f"Supabase API call failed: {api_error}")
+            logger.warning(f"Supabase API call failed: {api_error}")
             return False
             
     except Exception as e:
-        print(f"Error preparing results for Supabase: {e}")
+        logger.warning(f"Error preparing results for Supabase: {e}")
         return False
 
 def save_active_dataset(df: pd.DataFrame, filename: str = "active_data.csv"):
@@ -146,7 +150,7 @@ def save_prediction_results(results: Dict[str, Any], filename: str = "latest_pre
         if os.path.exists(tmp_path):
             try: os.remove(tmp_path)
             except: pass
-        print(f"Error saving results: {e}")
+        logger.warning(f"Error saving results: {e}")
     
     # Also sync to Supabase for Phase 3
     sync_results_to_supabase(results)
@@ -155,7 +159,7 @@ def save_prediction_results(results: Dict[str, Any], filename: str = "latest_pre
 # --- Mock Statistics Helper ---
 def generate_mock_results(df: pd.DataFrame):
     """Generates structured Meridian-like results for the frontend."""
-    print("Generating mock results...")
+    logger.info("Generating mock results...")
     # 1. Actual vs Predicted (Time Series)
     try:
         if df is not None and 'kpi' in df.columns:
@@ -193,7 +197,7 @@ def generate_mock_results(df: pd.DataFrame):
                 "confidence": 95
             })
 
-        print("Mock results generated successfully.")
+        logger.info("Mock results generated successfully.")
         return {
             "timestamp": datetime.now().isoformat(),
             "metrics": metrics,
@@ -206,7 +210,7 @@ def generate_mock_results(df: pd.DataFrame):
             }
         }
     except Exception as e:
-        print(f"Error in generate_mock_results: {e}")
+        logger.warning(f"Error in generate_mock_results: {e}")
         raise e
 
 # --- API Endpoints ---
@@ -229,7 +233,7 @@ def detect_media_columns(df: pd.DataFrame):
 def run_ols_fallback(df: pd.DataFrame, media_cols: List[str]):
     """Provides a high-speed linear regression fallback for small datasets."""
     import statsmodels.api as sm
-    print(f"Running OLS fallback for {len(df)} rows...")
+    logger.info(f"Running OLS fallback for {len(df)} rows...")
     
     # Pre-process
     df = df.copy()
@@ -254,7 +258,7 @@ def run_ols_fallback(df: pd.DataFrame, media_cols: List[str]):
         # Save the trained model to the models directory
         model_path = os.path.join(MODELS_DIR, "latest_ols_model.pkl")
         joblib.dump(model, model_path)
-        print(f"Model saved to {model_path}")
+        logger.info(f"Model saved to {model_path}")
         
         predicted = model.predict(X)
         
@@ -280,7 +284,7 @@ def run_ols_fallback(df: pd.DataFrame, media_cols: List[str]):
                 for idx, col in enumerate(base_x.columns):
                     vif_lookup[col] = float(variance_inflation_factor(base_x.values, idx))
             except Exception as vif_error:
-                print(f"VIF calculation failed: {vif_error}")
+                logger.warning(f"VIF calculation failed: {vif_error}")
                 for col in media_cols:
                     vif_lookup[col] = 1.0
         else:
@@ -319,16 +323,16 @@ def run_ols_fallback(df: pd.DataFrame, media_cols: List[str]):
             }
         }
     except Exception as e:
-        print(f"OLS Fallback failed: {e}")
+        logger.warning(f"OLS Fallback failed: {e}")
         return generate_mock_results(df)
 
 def run_modeling_pipeline(df: pd.DataFrame):
     """Branching logic between Meridian (Bayesian) and OLS (Small Data)."""
     media_cols = detect_media_columns(df)
-    print(f"Pipeline: Detected media columns: {media_cols}")
+    logger.info(f"Pipeline: Detected media columns: {media_cols}")
     
     if len(df) < 50:
-        print("Data size < 50 rows. Triggering OLS Fallback.")
+        logger.info("Data size < 50 rows. Triggering OLS Fallback.")
         return run_ols_fallback(df, media_cols)
     
     # Future: Real Meridian Implementation
@@ -361,7 +365,7 @@ async def import_data(file: UploadFile = File(...)):
         df = pd.read_csv(io.StringIO(content.decode('utf-8')))
         
         # Fuzzy Schema Detection
-        print(f"Importing data with columns: {list(df.columns)}")
+        logger.info(f"Importing data with columns: {list(df.columns)}")
         # Prioritized aliases with negative lookahead for common false positives
         time_aliases = ['time', 'date', 'week', 'period', 'day', 'timestamp', 'ds', 'wk', 'dt']
         kpi_aliases = ['kpi', 'revenue', 'sales', 'conversions', 'profit', 'target', 'orders', 'gmv'] 
@@ -393,10 +397,10 @@ async def import_data(file: UploadFile = File(...)):
             missing = []
             if not found_time: missing.append('time/date')
             if not found_kpi: missing.append('kpi/revenue')
-            print(f"Schema validation failed. Missing: {missing}")
+            logger.warning(f"Schema validation failed. Missing: {missing}")
             raise HTTPException(status_code=400, detail=f"Missing required columns: {missing}. Found: {list(df.columns)}")
         
-        print(f"Automatically mapped: time='{found_time}', kpi='{found_kpi}'")
+        logger.info(f"Automatically mapped: time='{found_time}', kpi='{found_kpi}'")
         
         # Rename for internal processing consistency
         # Ensure we don't overwrite if columns were already named correctly
@@ -411,13 +415,13 @@ async def import_data(file: UploadFile = File(...)):
         save_active_dataset(df)
         
         # Generate Real Results
-        print("Starting real analysis generation...")
+        logger.info("Starting real analysis generation...")
         analysis = run_modeling_pipeline(df)
         
-        print("Saving prediction results...")
+        logger.info("Saving prediction results...")
         save_prediction_results(analysis)
         
-        print("Import successful. Returning results.")
+        logger.info("Import successful. Returning results.")
         return {
             "success": True, 
             "message": "Data imported and Real Model analysis complete.", 
@@ -428,7 +432,7 @@ async def import_data(file: UploadFile = File(...)):
         raise he
     except Exception as e:
         import traceback
-        print(traceback.format_exc())
+        logger.info(traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/results/latest")
@@ -449,7 +453,7 @@ async def get_latest_results():
         with open(path, "r") as f:
             return json.load(f)
     except (json.JSONDecodeError, ValueError, FileNotFoundError) as e:
-        print(f"WARNING: Corrupt JSON results file at {path}. Regenerating dashboard state...")
+        logger.warning(f"WARNING: Corrupt JSON results file at {path}. Regenerating dashboard state...")
         if os.path.exists(path):
             try: os.remove(path)
             except: pass
@@ -480,7 +484,7 @@ async def train_model(background_tasks: BackgroundTasks):
     def process_training():
         analysis = run_modeling_pipeline(df)
         save_prediction_results(analysis)
-        print("Background training complete.")
+        logger.info("Background training complete.")
 
     background_tasks.add_task(process_training)
     
