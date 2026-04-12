@@ -21,6 +21,7 @@ export const GeoLiftPage = () => {
   const { setActivePage } = useDataStore();
   const data = useGeoLiftData();
 
+
   const tabs: { id: GeoLiftTab; label: string; icon: React.ReactNode }[] = [
     { id: "design", label: "Test Design", icon: <FlaskConical size={16} /> },
     { id: "monitor", label: "Monitor", icon: <Activity size={16} /> },

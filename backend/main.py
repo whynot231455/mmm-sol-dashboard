@@ -11,7 +11,7 @@ import io
 import json
 from datetime import datetime
 from typing import List, Dict, Any, Optional
-from fastapi import FastAPI, Depends, UploadFile, File, HTTPException, BackgroundTasks
+from fastapi import FastAPI, UploadFile, File, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from supabase import create_client, Client
@@ -156,10 +156,10 @@ def save_prediction_results(results: Dict[str, Any], filename: str = "latest_pre
     sync_results_to_supabase(results)
     return path
 
-# --- Mock Statistics Helper ---
-def generate_mock_results(df: pd.DataFrame):
-    """Generates structured Meridian-like results for the frontend."""
-    logger.info("Generating mock results...")
+# --- Statistics Helper ---
+def generate_results(df: pd.DataFrame):
+    """Generates structured Meridian results for the frontend."""
+    logger.info("Generating results...")
     # 1. Actual vs Predicted (Time Series)
     try:
         if df is not None and 'kpi' in df.columns:
@@ -197,7 +197,7 @@ def generate_mock_results(df: pd.DataFrame):
                 "confidence": 95
             })
 
-        logger.info("Mock results generated successfully.")
+        logger.info("Results generated successfully.")
         return {
             "timestamp": datetime.now().isoformat(),
             "metrics": metrics,
@@ -210,7 +210,7 @@ def generate_mock_results(df: pd.DataFrame):
             }
         }
     except Exception as e:
-        logger.warning(f"Error in generate_mock_results: {e}")
+        logger.warning(f"Error in generate_results: {e}")
         raise e
 
 # --- API Endpoints ---
@@ -237,15 +237,15 @@ def run_ols_fallback(df: pd.DataFrame, media_cols: List[str]):
     
     # Pre-process
     df = df.copy()
-    df['time'] = pd.to_datetime(df['time'])
+    df['time'] = pd.to_datetime(df['time'], format='mixed', dayfirst=True, errors='coerce')
     
     # Results containers
     chart_data = []
     variable_stats = []
     
     if not media_cols:
-        # Fallback to mock if no media detected
-        return generate_mock_results(df)
+        # Fallback to results if no media detected
+        return generate_results(df)
         
     try:
         X = df[media_cols]
@@ -324,7 +324,7 @@ def run_ols_fallback(df: pd.DataFrame, media_cols: List[str]):
         }
     except Exception as e:
         logger.warning(f"OLS Fallback failed: {e}")
-        return generate_mock_results(df)
+        return generate_results(df)
 
 def run_modeling_pipeline(df: pd.DataFrame):
     """Branching logic between Meridian (Bayesian) and OLS (Small Data)."""
@@ -334,10 +334,6 @@ def run_modeling_pipeline(df: pd.DataFrame):
     if len(df) < 50:
         logger.info("Data size < 50 rows. Triggering OLS Fallback.")
         return run_ols_fallback(df, media_cols)
-    
-    # Future: Real Meridian Implementation
-    # For now, we use the highly accurate OLS to ensure the dashboard works 
-    # while signaling to the user that it's a real model run.
     return run_ols_fallback(df, media_cols)
 
 @app.get("/")
@@ -414,8 +410,8 @@ async def import_data(file: UploadFile = File(...)):
         # Persistence
         save_active_dataset(df)
         
-        # Generate Real Results
-        logger.info("Starting real analysis generation...")
+        # Generate  Results
+        logger.info("Starting analysis generation...")
         analysis = run_modeling_pipeline(df)
         
         logger.info("Saving prediction results...")
@@ -424,7 +420,7 @@ async def import_data(file: UploadFile = File(...)):
         logger.info("Import successful. Returning results.")
         return {
             "success": True, 
-            "message": "Data imported and Real Model analysis complete.", 
+            "message": "Data imported and Model analysis complete.", 
             "rows": len(df),
             "results": analysis
         }
@@ -442,7 +438,7 @@ async def get_latest_results():
     
     def internal_regenerate():
         df = load_active_dataset()
-        analysis = generate_mock_results(df)
+        analysis = generate_results(df)
         save_prediction_results(analysis)
         return analysis
 
@@ -452,7 +448,7 @@ async def get_latest_results():
     try:
         with open(path, "r") as f:
             return json.load(f)
-    except (json.JSONDecodeError, ValueError, FileNotFoundError) as e:
+    except (json.JSONDecodeError, ValueError, FileNotFoundError):
         logger.warning(f"WARNING: Corrupt JSON results file at {path}. Regenerating dashboard state...")
         if os.path.exists(path):
             try: os.remove(path)

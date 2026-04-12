@@ -1,4 +1,8 @@
 import '@testing-library/jest-dom';
+import { afterEach } from 'vitest';
+import { cleanup } from '@testing-library/react';
 
-process.env.SUPABASE_URL = 'http://localhost';
-process.env.SUPABASE_ANON_KEY = 'mock';
+// runs a cleanup after each test case (e.g. clearing jsdom)
+afterEach(() => {
+  cleanup();
+});

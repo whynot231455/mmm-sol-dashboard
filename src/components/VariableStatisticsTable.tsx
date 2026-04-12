@@ -88,7 +88,7 @@ export const VariableStatisticsTable = ({ variables }: VariableStatisticsTablePr
                           style={{ width: `${variable.confidence}%` }}
                         ></div>
                       </div>
-                      <span className="text-xs font-bold text-slate-700">{variable.confidence}%</span>
+                      <span className="text-xs font-bold text-slate-700">{variable.confidence.toFixed(2)}%</span>
                     </div>
                   </td>
                 </tr>

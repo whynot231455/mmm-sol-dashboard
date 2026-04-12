@@ -81,10 +81,7 @@ function formatChatHistory(history: ChatHistoryEntry[]): string {
   return history.map(m => `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.content}`).join('\n');
 }
 
-/**
- * Resumes and runs an agent task on the server using structured tools and memory.
- * Optionally supports a callback for streaming the final synthesis.
- */
+
 export async function runAgent(
   taskId: string,
   context: { docs: string; metrics: string },
