@@ -1,7 +1,5 @@
 import { useState, useMemo } from 'react';
 import { 
-    Search, 
-    Maximize2, 
     Download, 
     Play, 
     Database, 
@@ -267,14 +265,6 @@ export const TransformPage = () => {
                     </p>
                 </div>
                 <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-1 bg-slate-100/50 p-1 rounded-xl border border-slate-200">
-                        <button className="p-2 text-slate-400 hover:text-slate-600 bg-white shadow-sm rounded-lg border border-slate-200 transition-all">
-                            <Search size={18} />
-                        </button>
-                        <button className="p-2 text-slate-400 hover:text-slate-600 transition-all">
-                            <Maximize2 size={18} />
-                        </button>
-                    </div>
                     <button className="flex items-center gap-2 px-6 py-2.5 bg-[#871F1E] hover:bg-[#a12524] text-white rounded-xl text-sm font-bold shadow-lg shadow-[#871F1E]/20 transition-all active:scale-95 group">
                         Apply to Model
                         <Play size={14} className="fill-white group-hover:translate-x-0.5 transition-transform" />

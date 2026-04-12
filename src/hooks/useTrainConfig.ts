@@ -1,7 +1,10 @@
-import { useState } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useDataStore } from '../store/useDataStore';
 
 export interface TrainConfig {
+    targetVariable: string;
+    trainTestRatio: string;
+    modelType: string;
     trainingWindow: {
         startDate: string;
         endDate: string;
@@ -18,23 +21,7 @@ export interface TrainConfig {
 }
 
 export const useTrainConfig = () => {
-    const { rawData, mapping } = useDataStore();
-
-    const [config, setConfig] = useState<TrainConfig>({
-        trainingWindow: {
-            startDate: '',
-            endDate: ''
-        },
-        features: {
-            mediaChannels: [],
-            organicBaseline: [],
-            externalFactors: []
-        },
-        hyperparameters: {
-            adstockDecayMax: 0.7,
-            saturationHillMax: 3.0
-        }
-    });
+    const { rawData, mapping, headers } = useDataStore();
 
     // Get available media channels from CSV
     const availableChannels = Array.from(
@@ -44,6 +31,72 @@ export const useTrainConfig = () => {
                 .filter(Boolean)
         )
     );
+
+    // Extract date range from raw data
+    const dateConstraints = useMemo(() => {
+        if (!rawData || !mapping.date) return { min: '', max: '' };
+        
+        const dates = rawData
+            .map(row => {
+                const val = row[mapping.date!] as string;
+                if (!val) return null;
+                const d = new Date(val);
+                return isNaN(d.getTime()) ? null : d;
+            })
+            .filter((d): d is Date => d !== null);
+
+        if (dates.length === 0) return { min: '', max: '' };
+
+        const min = new Date(Math.min(...dates.map(d => d.getTime())));
+        const max = new Date(Math.max(...dates.map(d => d.getTime())));
+
+        const formatDate = (date: Date) => {
+            return date.toISOString().split('T')[0];
+        };
+
+        return {
+            min: formatDate(min),
+            max: formatDate(max)
+        };
+    }, [rawData, mapping.date]);
+
+    const [config, setConfig] = useState<TrainConfig>({
+        targetVariable: mapping.revenue || '',
+        trainTestRatio: '80/20',
+        modelType: 'Bayesian (Meridian)',
+        trainingWindow: {
+            startDate: dateConstraints.min,
+            endDate: dateConstraints.max
+        },
+        features: {
+            mediaChannels: availableChannels, // Auto-select all available channels
+            organicBaseline: [],
+            externalFactors: []
+        },
+        hyperparameters: {
+            adstockDecayMax: 0.7,
+            saturationHillMax: 3.0
+        }
+    });
+
+    // Update training window defaults when dateConstraints are loaded/changed
+    useEffect(() => {
+        if (dateConstraints.min && dateConstraints.max) {
+            setConfig(prev => {
+                // Only auto-fill if currently empty to avoid overwriting user edits
+                if (!prev.trainingWindow.startDate || !prev.trainingWindow.endDate) {
+                    return {
+                        ...prev,
+                        trainingWindow: {
+                            startDate: prev.trainingWindow.startDate || dateConstraints.min,
+                            endDate: prev.trainingWindow.endDate || dateConstraints.max
+                        }
+                    };
+                }
+                return prev;
+            });
+        }
+    }, [dateConstraints]);
 
     // Mock organic baseline and external factors
     const organicBaselineOptions = ['Seasonality', 'Trend', 'Holidays'];
@@ -70,6 +123,8 @@ export const useTrainConfig = () => {
     return {
         config,
         setConfig,
+        headers,
+        dateConstraints,
         availableChannels,
         organicBaselineOptions,
         externalFactorOptions,

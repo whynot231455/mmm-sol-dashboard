@@ -5,6 +5,7 @@ interface PreFlightCheckPanelProps {
   missingValues: number;
   estimatedRuntime: number;
   isReady: boolean;
+  isProcessing?: boolean;
   onStartTraining: () => void;
 }
 
@@ -13,6 +14,7 @@ export const PreFlightCheckPanel = ({
   missingValues,
   estimatedRuntime,
   isReady,
+  isProcessing = false,
   onStartTraining
 }: PreFlightCheckPanelProps) => {
   return (
@@ -49,11 +51,20 @@ export const PreFlightCheckPanel = ({
       {/* Start Training Button */}
       <button
         onClick={onStartTraining}
-        disabled={!isReady}
+        disabled={!isReady || isProcessing}
         className="w-full bg-brand-secondary hover:bg-brand-secondary/90 disabled:bg-slate-200 disabled:cursor-not-allowed text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-red-100 disabled:shadow-none flex items-center justify-center gap-2"
       >
-        <Play size={18} fill="currentColor" />
-        Start Training
+        {isProcessing ? (
+          <>
+            <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+            Training in Progress
+          </>
+        ) : (
+          <>
+            <Play size={18} fill="currentColor" />
+            Apply to Model
+          </>
+        )}
       </button>
 
       {/* Last Run Status */}
