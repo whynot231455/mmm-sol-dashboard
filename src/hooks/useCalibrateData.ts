@@ -46,10 +46,13 @@ export const useCalibrateData = () => {
 
         const impactData = channels.slice(0, 6).map(channel => ({
             channel,
-            baseline: seeded(channel + '_b') * 100 + 50,
-            calibrated: seeded(channel + '_c') * 100 + 50,
-            actuals: seeded(channel + '_a') * 100 + 50
+            baseline: (seeded(channel + '_b') * 1500 + 500),
+            calibrated: (seeded(channel + '_c') * 1500 + 500),
+            actuals: (seeded(channel + '_a') * 1500 + 500)
         }));
+
+        const totalMediaImpact = impactData.reduce((acc, curr) => acc + curr.calibrated, 0);
+        const baselineSales = totalMediaImpact * 1.5; // Baseline is usually larger than media impact
 
         // Mock coefficient changes
         const coefficientChanges = channels.slice(0, 3).map(channel => ({
@@ -71,7 +74,9 @@ export const useCalibrateData = () => {
             metrics: {
                 modelFit,
                 mape,
-                roiDelta
+                roiDelta,
+                baselineSales,
+                totalMediaImpact
             },
             impactData,
             coefficientChanges,
