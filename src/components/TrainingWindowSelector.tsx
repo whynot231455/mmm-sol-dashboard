@@ -1,4 +1,4 @@
-import { Calendar, ChevronDown, CalendarDays } from 'lucide-react';
+import { Calendar, ChevronDown } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { CalendarRangePicker } from './CalendarRangePicker';
 import { clsx, type ClassValue } from 'clsx';

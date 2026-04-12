@@ -82,6 +82,7 @@ export const useTrainConfig = () => {
     // Update training window defaults when dateConstraints are loaded/changed
     useEffect(() => {
         if (dateConstraints.min && dateConstraints.max) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setConfig(prev => {
                 // Only auto-fill if currently empty to avoid overwriting user edits
                 if (!prev.trainingWindow.startDate || !prev.trainingWindow.endDate) {

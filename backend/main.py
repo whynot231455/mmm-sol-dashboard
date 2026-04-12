@@ -248,12 +248,21 @@ def run_ols_fallback(df: pd.DataFrame, media_cols: List[str]):
         return generate_results(df)
         
     try:
-        X = df[media_cols]
+        # Handle potential NaNs or Infinite values in X or y
+        X = df[media_cols].fillna(0)
+        y = df['kpi'].fillna(0)
+        
         # Add intercept
         X = sm.add_constant(X)
-        y = df['kpi']
+        
+        if len(df) < X.shape[1]:
+             logger.warning("Not enough data points for the number of variables. Reducing variables.")
+             # Simple heuristic: take top 5 if too many
+             if X.shape[1] > 5:
+                 X = X.iloc[:, :6] # const + 5 vars
         
         model = sm.OLS(y, X).fit()
+
         
         # Save the trained model to the models directory
         model_path = os.path.join(MODELS_DIR, "latest_ols_model.pkl")
@@ -358,7 +367,20 @@ async def import_data(file: UploadFile = File(...)):
     """Validates schema, stores CSV, and triggers automated prediction."""
     try:
         content = await file.read()
-        df = pd.read_csv(io.StringIO(content.decode('utf-8')))
+        if not content:
+            raise HTTPException(status_code=400, detail="Empty file uploaded.")
+            
+        try:
+            df = pd.read_csv(io.StringIO(content.decode('utf-8')))
+        except UnicodeDecodeError:
+            df = pd.read_csv(io.StringIO(content.decode('latin1')))
+        except Exception as e:
+            logger.error(f"CSV Parsing error: {e}")
+            raise HTTPException(status_code=400, detail=f"Invalid CSV format: {str(e)}")
+
+        if df.empty:
+            raise HTTPException(status_code=400, detail="Uploaded CSV contains no data.")
+
         
         # Fuzzy Schema Detection
         logger.info(f"Importing data with columns: {list(df.columns)}")
@@ -399,13 +421,23 @@ async def import_data(file: UploadFile = File(...)):
         logger.info(f"Automatically mapped: time='{found_time}', kpi='{found_kpi}'")
         
         # Rename for internal processing consistency
-        # Ensure we don't overwrite if columns were already named correctly
+        # Use a safe rename to avoid collisions
         rename_map = {}
-        if found_time != 'time': rename_map[found_time] = 'time'
-        if found_kpi != 'kpi': rename_map[found_kpi] = 'kpi'
+        if found_time != 'time': 
+            if 'time' in df.columns: df = df.drop(columns=['time'])
+            rename_map[found_time] = 'time'
+        if found_kpi != 'kpi': 
+            if 'kpi' in df.columns: df = df.drop(columns=['kpi'])
+            rename_map[found_kpi] = 'kpi'
         
         if rename_map:
             df = df.rename(columns=rename_map)
+        
+        # Drop rows where critical columns are null
+        df = df.dropna(subset=['time', 'kpi'])
+        if df.empty:
+            raise HTTPException(status_code=400, detail="Data invalid after removing nulls in time/kpi columns.")
+
         
         # Persistence
         save_active_dataset(df)
@@ -495,7 +527,9 @@ async def calibrate_model(data: CalibrateSchema):
 
 @app.post("/optimize")
 async def optimize_budget():
-    return {"message": "Optimization results calculated."}
+    logger.info("Budget optimization triggered (Placeholder)")
+    return {"message": "Budget optimization calculated using placeholder heuristic.", "optimization_status": "mock"}
+
 
 @app.post("/predict")
 async def predict_mmm(data: PredictSchema):
@@ -503,7 +537,9 @@ async def predict_mmm(data: PredictSchema):
 
 @app.post("/geolift")
 async def geolift_analysis():
-    return {"message": "Geolift analysis complete."}
+    logger.info("GeoLift analysis triggered (Placeholder)")
+    return {"message": "Geolift analysis triggered. Results will be available in the dashboard soon.", "status": "simulated"}
+
 
 if __name__ == "__main__":
     import uvicorn

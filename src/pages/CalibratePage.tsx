@@ -5,7 +5,7 @@ import { CalibrationImpactChart } from '../components/CalibrationImpactChart';
 import { CoefficientChangesTable } from '../components/CoefficientChangesTable';
 import { TuningParametersPanel } from '../components/TuningParametersPanel';
 import { KPICard } from '../components/KPICard';
-import { TrendingUp, Save, Play, X, Activity, BarChart3, DollarSign } from 'lucide-react';
+import { TrendingUp, Save, Play, X, Activity, BarChart3 } from 'lucide-react';
 
 export const CalibratePage = () => {
   const data = useCalibrateData();
