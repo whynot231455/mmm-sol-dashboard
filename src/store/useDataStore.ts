@@ -81,12 +81,14 @@ export interface TransformSettings {
     adstock: {
         type: 'geometric';
         decayRate: number;
+        lag: number;
     };
     saturation: {
         active: boolean;
         curveType: 'hill' | 's-curve' | 'power';
         slope: number;
         inflection: number;
+        gamma?: number;
     };
     metrics: {
         r2: number;
@@ -299,13 +301,15 @@ export const useDataStore = create<DataState>()(
                 },
                 adstock: {
                     type: 'geometric',
-                    decayRate: 0.65
+                    decayRate: 0.65,
+                    lag: 0
                 },
                 saturation: {
                     active: true,
                     curveType: 'hill',
                     slope: 1.42,
-                    inflection: 0.50
+                    inflection: 0.50,
+                    gamma: 50000
                 },
                 metrics: {
                     r2: 0.942,
@@ -555,13 +559,15 @@ export const useDataStore = create<DataState>()(
                     },
                     adstock: {
                         type: 'geometric',
-                        decayRate: 0.65
+                        decayRate: 0.65,
+                        lag: 0
                     },
                     saturation: {
                         active: true,
                         curveType: 'hill',
                         slope: 1.42,
-                        inflection: 0.50
+                        inflection: 0.50,
+                        gamma: 50000
                     },
                     metrics: {
                         r2: 0.942,
