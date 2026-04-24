@@ -5,16 +5,26 @@ import { useMeasureData } from './useMeasureData';
 import { usePredictData } from './usePredictData';
 import { useOptimizeData } from './useOptimizeData';
 import { useValidateData } from './useValidateData';
+import { toast } from 'sonner';
 
 export const useDashboardSync = () => {
   const { 
     transformSettings, 
     filters: globalFilters, 
     activePage, 
-    isLoaded
+    isLoaded,
+    isProcessing,
+    setIsProcessing,
   } = useDataStore();
 
   const isDashboardPage = ['measure', 'predict', 'optimize', 'validate', 'train'].includes(activePage);
+  
+  // Simulated processing stop
+  useEffect(() => {
+    if (!isProcessing) return;
+    const timer = setTimeout(() => setIsProcessing(false), 3000);
+    return () => clearTimeout(timer);
+  }, [isProcessing, setIsProcessing]);
   
   // Get data from all pages with default/current settings - ONLY when on dashboard pages
   const measureData = useMeasureData(globalFilters, { enabled: isDashboardPage });
@@ -54,15 +64,25 @@ export const useDashboardSync = () => {
       };
 
       try {
-        await supabase
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { error } = await supabase
           .from('dashboard_state')
           .upsert({ 
             key: 'current_dashboard', 
             data: stateToSync,
-            updated_at: new Date().toISOString()
-          }, { onConflict: 'key' });
+            updated_at: new Date().toISOString(),
+            user_id: user.id,
+          }, { onConflict: 'key,user_id' });
+          
+        if (error) {
+          console.error('Supabase sync error details:', error);
+          toast.error('Failed to sync dashboard state.');
+        }
       } catch (err) {
         console.error('Failed to sync dashboard state:', err);
+        toast.error('Failed to sync dashboard state.');
       }
     };
 

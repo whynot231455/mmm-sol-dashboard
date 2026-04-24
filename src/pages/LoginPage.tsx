@@ -1,24 +1,53 @@
 import React, { useState } from 'react';
 import { Mail, Lock, BarChart3, Moon } from 'lucide-react';
 import { useDataStore } from '../store/useDataStore';
+import { supabase } from '../lib/supabase';
 
 export const LoginPage: React.FC = () => {
     const { setActivePage } = useDataStore();
-    const [email, setEmail] = useState('noel.j@solanalytics.com');
-    const [password, setPassword] = useState('password');
+    const [email, setEmail] = useState(() => localStorage.getItem('remembered_email') || '');
+    const [password, setPassword] = useState(() => localStorage.getItem('remembered_password') || '');
+    const [rememberMe, setRememberMe] = useState(() => localStorage.getItem('remember_me') === 'true');
     const [isLoading, setIsLoading] = useState(false);
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-    const handleLogin = (e: React.FormEvent) => {
+    const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
-        setTimeout(() => {
-            setIsLoading(false);
-            setActivePage('measure');
-        }, 1200);
+        setErrorMessage(null);
+
+        localStorage.setItem('remember_me', rememberMe ? 'true' : 'false');
+        if (rememberMe) {
+            localStorage.setItem('remembered_email', email.trim());
+            localStorage.setItem('remembered_password', password);
+        } else {
+            localStorage.removeItem('remembered_email');
+            localStorage.removeItem('remembered_password');
+        }
+
+        const { error } = await supabase.auth.signInWithPassword({
+            email: email.trim(),
+            password,
+        });
+
+        setIsLoading(false);
+
+        if (error) {
+            setErrorMessage(error.message);
+            return;
+        }
+
+        setActivePage('measure');
     };
 
     return (
-        <div className="min-h-screen flex font-['Inter',sans-serif] selection:bg-brand-primary/10">
+        <div className="relative min-h-screen flex font-['Inter',sans-serif] selection:bg-brand-primary/10">
+                        {/* Full-screen loading overlay */}
+            {isLoading && (
+                <div className="absolute inset-0 z-50 bg-white/80 backdrop-blur-sm flex items-center justify-center">
+                    <div className="w-8 h-8 border-2 border-slate-200 border-t-[#450a0a] rounded-full animate-spin" />
+                </div>
+            )}
             {/* Left Side: Dashboard Preview & Glassmorphism Card */}
             <div className="hidden lg:block lg:w-[60%] relative overflow-hidden bg-[#0A0A0B]">
                 {/* Dashboard Image Overlay */}
@@ -75,12 +104,13 @@ export const LoginPage: React.FC = () => {
                     <form onSubmit={handleLogin} className="space-y-6">
                         <div className="space-y-5">
                             <div className="space-y-2">
-                                <label className="text-xs font-bold text-slate-600 ml-1">Email Address</label>
+                                <label htmlFor="login-email" className="text-xs font-bold text-slate-600 ml-1">Email Address</label>
                                 <div className="relative group">
                                     <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#450a0a] transition-colors">
                                         <Mail size={18} />
                                     </div>
                                     <input
+                                        id="login-email"
                                         type="email"
                                         required
                                         className="w-full bg-[#F9FAFB] border border-slate-200 rounded-2xl py-3.5 pl-12 pr-4 text-slate-900 text-sm font-semibold focus:border-[#450a0a] outline-none focus:ring-4 focus:ring-[#450a0a]/5 transition-all"
@@ -92,12 +122,13 @@ export const LoginPage: React.FC = () => {
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-xs font-bold text-slate-600 ml-1">Password</label>
+                                <label htmlFor="login-password" className="text-xs font-bold text-slate-600 ml-1">Password</label>
                                 <div className="relative group">
                                     <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#450a0a] transition-colors">
                                         <Lock size={18} />
                                     </div>
                                     <input
+                                        id="login-password"
                                         type="password"
                                         required
                                         className="w-full bg-[#F9FAFB] border border-slate-200 rounded-2xl py-3.5 pl-12 pr-4 text-slate-900 text-sm font-semibold focus:border-[#450a0a] outline-none focus:ring-4 focus:ring-[#450a0a]/5 transition-all"
@@ -111,7 +142,12 @@ export const LoginPage: React.FC = () => {
 
                         <div className="flex items-center justify-between text-xs font-bold px-1">
                             <label className="flex items-center gap-2 text-slate-500 cursor-pointer group">
-                                <input type="checkbox" className="w-4 h-4 rounded border-slate-300 text-[#450a0a] focus:ring-[#450a0a]" />
+                                <input 
+                                    type="checkbox" 
+                                    className="w-4 h-4 rounded border-slate-300 text-[#450a0a] focus:ring-[#450a0a]"
+                                    checked={rememberMe}
+                                    onChange={(e) => setRememberMe(e.target.checked)}
+                                />
                                 <span className="group-hover:text-slate-700 transition-colors">Remember me for 30 days</span>
                             </label>
                             <button type="button" className="text-[#450a0a] hover:underline">Forgot Password?</button>
@@ -126,6 +162,12 @@ export const LoginPage: React.FC = () => {
                                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                             ) : "Log In"}
                         </button>
+
+                        {errorMessage ? (
+                            <p className="text-sm font-medium text-red-700" role="alert">
+                                {errorMessage}
+                            </p>
+                        ) : null}
                     </form>
 
                     {/* Social Login */}
@@ -166,3 +208,6 @@ export const LoginPage: React.FC = () => {
         </div>
     );
 };
+
+
+

@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import { useDataStore } from '../store/useDataStore';
-import { AlertCircle, Check } from 'lucide-react';
+import { AlertCircle, Check, Loader2 } from 'lucide-react';
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -16,15 +17,32 @@ const REQUIRED_FIELDS = [
 ];
 
 export const ColumnMapping = () => {
-  const { headers, mapping, setMapping, setActivePage } = useDataStore();
+  const { headers, mapping, setMapping, setActivePage, setIsProcessing } = useDataStore();
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleMap = (field: string, header: string) => {
     setMapping({ ...mapping, [field]: header });
   };
 
-  const handleContinue = () => {
-    setMapping({ ...mapping });
-    setActivePage('measure');
+  const handleContinue = async () => {
+    setIsLoading(true);
+    try {
+      setMapping({ ...mapping });
+      
+      // Trigger Background Processing (Simulated)
+      setIsProcessing(true);
+      
+      // Artificial delay for effect
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      // Navigate to full-page success transition
+      setActivePage('success');
+    } catch (error) {
+      console.error("Failed to initialize dashboard:", error);
+      setIsProcessing(false);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -102,16 +120,25 @@ export const ColumnMapping = () => {
 
         <button
           onClick={handleContinue}
-          disabled={!REQUIRED_FIELDS.every(f => !!mapping[f.id])}
+          disabled={!REQUIRED_FIELDS.every(f => !!mapping[f.id]) || isLoading}
           className={cn(
-            "px-8 py-3.5 rounded-xl font-bold transition-all flex items-center justify-center gap-2 shadow-lg",
-            REQUIRED_FIELDS.every(f => !!mapping[f.id])
+            "px-8 py-3.5 rounded-xl font-bold transition-all flex items-center justify-center gap-2 shadow-lg min-w-[200px]",
+            REQUIRED_FIELDS.every(f => !!mapping[f.id]) && !isLoading
               ? "bg-slate-900 text-white hover:bg-slate-800 shadow-slate-200 active:scale-95"
               : "bg-slate-100 text-slate-400 cursor-not-allowed shadow-none"
           )}
         >
-          Initialize Dashboard
-          {REQUIRED_FIELDS.every(f => !!mapping[f.id]) && <Check size={18} />}
+          {isLoading ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin text-brand-primary" />
+              Initializng...
+            </>
+          ) : (
+            <>
+              Initialize Dashboard
+              {REQUIRED_FIELDS.every(f => !!mapping[f.id]) && <Check size={18} />}
+            </>
+          )}
         </button>
       </div>
     </div>

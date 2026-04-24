@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { 
   Plus, 
   Search, 
@@ -8,99 +8,210 @@ import {
   MonitorPlay,
   Globe,
   Database,
+
   Link2,
   Megaphone,
   UserCheck,
   Package
 } from 'lucide-react';
-import { useDataStore } from '../store/useDataStore';
+import { useDataStore, type Integration } from '../store/useDataStore';
+import { integrationApi } from '../services/integrationApi';
 import { IntegrationCard, type IntegrationStatus } from '../components/IntegrationCard';
+import { IntegrationWizard } from '../components/IntegrationWizard';
+import { IntegrationSettingsModal } from '../components/IntegrationSettingsModal';
+import { SyncDetailsModal } from '../components/SyncDetailsModal';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { toast } from 'sonner';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
 export const ConnectPage = () => {
-  const { rawData, mapping } = useDataStore();
+  const { rawData, mapping, integrations: dbIntegrations, fetchIntegrations, addIntegration } = useDataStore();
   const [activeTab, setActiveTab] = useState('All Sources');
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedPlatform, setSelectedPlatform] = useState<{ id: string; name: string; icon: React.ReactNode } | null>(null);
+  const [editingIntegration, setEditingIntegration] = useState<Integration | null>(null);
+  const [viewingSyncId, setViewingSyncId] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchIntegrations();
+  }, [fetchIntegrations]);
+
+  useEffect(() => {
+    const { startPollingIntegrations, stopPollingIntegrations } = useDataStore.getState();
+    startPollingIntegrations();
+    return () => stopPollingIntegrations();
+  }, []);
 
   // Detect connected channels from CSV
-  const connectedChannels = useMemo(() => {
+  const csvConnectedChannels = useMemo(() => {
     if (!rawData.length || !mapping.channel) return new Set<string>();
     const channels = rawData.map(row => String(row[mapping.channel!] || '').toLowerCase());
     return new Set(channels);
   }, [rawData, mapping.channel]);
 
-  const integrations = [
+  const integrationDefinitions = useMemo(() => [
     {
+      platformId: 'google_ads',
       name: 'Google Ads',
       type: 'Paid Media',
       icon: <Megaphone className="text-blue-500" />,
-      id: '882-129-3301',
-      lastSynced: '2m ago',
       matchNames: ['google ads', 'adwords', 'search ads']
     },
     {
+      platformId: 'meta_ads',
       name: 'Meta Ads',
       type: 'Paid Media',
       icon: <div className="text-blue-600 font-bold text-lg italic">f</div>,
-      id: '1029384756',
-      status: 'syncing' as IntegrationStatus,
-      progress: 45,
       matchNames: ['meta ads', 'facebook ads', 'instagram ads', 'facebook']
     },
     {
+      platformId: 'linkedin_ads',
       name: 'LinkedIn Ads',
       type: 'Paid Media',
       icon: <div className="bg-blue-700 text-white p-1 rounded-sm"><Link2 size={12} /></div>,
-      status: 'error' as IntegrationStatus,
-      statusText: 'Auth token expired',
       matchNames: ['linkedin ads', 'linkedin']
     },
     {
+      platformId: 'salesforce',
       name: 'Salesforce',
       type: 'CRM & Sales',
       icon: <Database className="text-blue-400" />,
-      id: 'Org: Sol-Analytics-Prod',
-      lastSynced: '1h ago',
       matchNames: ['salesforce', 'crm']
     },
     {
+      platformId: 'tiktok_ads',
       name: 'TikTok Ads',
       type: 'Paid Media',
       icon: <MonitorPlay className="text-black" />,
       matchNames: ['tiktok ads', 'tiktok']
     },
     {
+      platformId: 'hubspot',
       name: 'HubSpot',
       type: 'CRM & Sales',
       icon: <UserCheck className="text-orange-500" />,
-      statusText: 'Import CRM contacts & deals',
       matchNames: ['hubspot']
     },
     {
+      platformId: 'shopify',
       name: 'Shopify',
       type: 'E-commerce',
       icon: <Package className="text-green-600" />,
-      statusText: 'Sync sales & product data',
       matchNames: ['shopify']
     },
     {
+      platformId: 'twitter_ads',
       name: 'Twitter / X Ads',
       type: 'Paid Media',
       icon: <Globe className="text-slate-800" />,
       matchNames: ['twitter ads', 'x ads', 'twitter']
     }
-  ];
+  ], []);
 
-  const filteredIntegrations = integrations.filter(item => {
-    const matchesTab = activeTab === 'All Sources' || item.type === activeTab;
-    const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesTab && matchesSearch;
-  });
+  const mergedIntegrations = useMemo(() => {
+    return integrationDefinitions.map(def => {
+      const dbMatch = dbIntegrations.find(i => i.platform_id === def.platformId);
+      const csvMatch = def.matchNames.some(name => csvConnectedChannels.has(name));
+      
+      let status: IntegrationStatus = 'available';
+      let id = undefined;
+      let lastSynced = undefined;
+      let statusText = undefined;
+      let sourceHint = undefined;
+      let progress = undefined;
+
+      if (dbMatch) {
+        status = dbMatch.status;
+        id = dbMatch.account_id;
+        lastSynced = dbMatch.last_synced_at ? new Date(dbMatch.last_synced_at).toLocaleDateString() : 'Never';
+        statusText = typeof dbMatch.config?.last_message === 'string' ? dbMatch.config.last_message : undefined;
+        progress = typeof dbMatch.config?.sync_progress === 'number' ? dbMatch.config.sync_progress : undefined;
+      }
+
+      if (status === 'pending_approval' && !statusText) {
+        statusText = 'Approve access in your ad platform, then reconnect to verify.';
+      }
+
+      if (status === 'syncing' && !statusText) {
+        statusText = 'Initial sync is in progress.';
+      }
+
+      if (csvMatch && !dbMatch) {
+        sourceHint = 'Detected in imported CSV';
+      }
+
+      return {
+        ...def,
+        status,
+        id,
+        lastSynced,
+        statusText,
+        sourceHint,
+        progress,
+      };
+    }).filter(item => {
+      const matchesTab = activeTab === 'All Sources' || item.type === activeTab;
+      const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
+      return matchesTab && matchesSearch;
+    });
+  }, [integrationDefinitions, dbIntegrations, csvConnectedChannels, activeTab, searchQuery]);
+
+  const handleAddConnection = () => {
+    const nextPlatform = integrationDefinitions.find(def => {
+      const dbMatch = dbIntegrations.find(i => i.platform_id === def.platformId);
+      return !dbMatch || dbMatch.status === 'available' || dbMatch.status === 'error';
+    }) || integrationDefinitions[0];
+
+    setSelectedPlatform({ id: nextPlatform.platformId, name: nextPlatform.name, icon: nextPlatform.icon });
+  };
+
+  const handleResync = async (platformId: string) => {
+    const dbMatch = dbIntegrations.find(i => i.platform_id === platformId);
+    if (!dbMatch) return;
+    
+    // For direct re-sync button click, let's open the settings modal
+    setEditingIntegration(dbMatch);
+  };
+
+  const handleDirectResync = async (platformId: string) => {
+    const dbMatch = dbIntegrations.find(i => i.platform_id === platformId);
+    if (!dbMatch) return;
+    
+    // Set status to syncing optimistically
+    const updated = { ...dbMatch, status: 'syncing' as const };
+    useDataStore.setState(prev => ({
+       integrations: prev.integrations.map(i => i.id === dbMatch.id ? updated : i)
+    }));
+
+    try {
+      const config = dbMatch.config as Record<string, string>;
+      const validationResult = await integrationApi.testConnection(dbMatch.platform_id, config);
+      
+      await addIntegration({
+        platform_id: dbMatch.platform_id,
+        status: validationResult.result === 'connected' ? 'connected' : 'pending_approval',
+        account_name: validationResult.accountName || dbMatch.account_name,
+        account_id: validationResult.externalAccountId || dbMatch.account_id || 'Unknown',
+        config: {
+          ...config,
+          last_result: validationResult.result,
+          last_message: validationResult.message,
+          details: validationResult.details || {},
+        },
+        last_synced_at: validationResult.result === 'connected' ? new Date().toISOString() : null,
+      });
+      toast.success('Sync retried successfully.');
+      fetchIntegrations();
+    } catch (err) {
+      console.error(err);
+      toast.error(err instanceof Error ? err.message : 'Failed to retry sync.');
+      fetchIntegrations();
+    }
+  };
 
   return (
     <div className="px-8 pt-8 space-y-8 animate-in fade-in duration-500 pb-12">
@@ -118,7 +229,10 @@ export const ConnectPage = () => {
             Connect new platforms to enrich your analytics.
           </p>
         </div>
-        <button className="flex items-center gap-2 px-6 py-4 bg-brand-primary text-white rounded-2xl text-sm font-bold shadow-lg shadow-red-200/50 hover:bg-brand-primary/90 transition-all active:scale-95">
+        <button
+          onClick={handleAddConnection}
+          className="flex items-center gap-2 px-6 py-4 bg-brand-primary text-white rounded-2xl text-sm font-bold shadow-lg shadow-red-200/50 hover:bg-brand-primary/90 transition-all active:scale-95"
+        >
           <Plus size={20} />
           Add New Connection
         </button>
@@ -134,8 +248,8 @@ export const ConnectPage = () => {
               className={cn(
                 "px-5 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all",
                 activeTab === tab 
-                  ? "bg-brand-secondary/10 text-brand-secondary shadow-sm" 
-                  : "text-slate-500 hover:bg-slate-50 hover:text-slate-700"
+                   ? "bg-brand-secondary/10 text-brand-secondary shadow-sm" 
+                   : "text-slate-500 hover:bg-slate-50 hover:text-slate-700"
               )}
             >
               {tab}
@@ -165,24 +279,45 @@ export const ConnectPage = () => {
 
       {/* Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {filteredIntegrations.map((item, idx) => {
-          // Determine status dynamically
-          let status: IntegrationStatus = item.status || 'available';
-          
-          if (!item.status) {
-              const matches = item.matchNames.some(name => connectedChannels.has(name));
-              if (matches) status = 'connected';
-          }
-
-          return (
-            <IntegrationCard 
-              key={idx}
-              {...item}
-              status={status}
-            />
-          );
-        })}
+        {mergedIntegrations.map((item, idx) => (
+          <IntegrationCard 
+            key={idx}
+            {...item}
+            onConnect={() => setSelectedPlatform({ id: item.platformId, name: item.name, icon: item.icon })}
+            onEditSettings={() => setEditingIntegration(dbIntegrations.find(i => i.platform_id === item.platformId) || null)}
+            onResync={() => handleResync(item.platformId)}
+            onRetrySync={() => handleDirectResync(item.platformId)}
+            onViewDetails={() => {
+              const dbMatch = dbIntegrations.find(i => i.platform_id === item.platformId);
+              if (dbMatch) setViewingSyncId(dbMatch.id);
+            }}
+          />
+        ))}
       </div>
+
+      {/* Integration Wizard Modal */}
+      {selectedPlatform && (
+        <IntegrationWizard 
+          platform={selectedPlatform}
+          onClose={() => setSelectedPlatform(null)}
+          onSuccess={() => fetchIntegrations()}
+        />
+      )}
+
+      {/* Integration Settings Modal */}
+      {editingIntegration && (
+        <IntegrationSettingsModal
+          integration={editingIntegration}
+          onClose={() => setEditingIntegration(null)}
+        />
+      )}
+
+      {viewingSyncId && (
+        <SyncDetailsModal
+          integrationId={viewingSyncId}
+          onClose={() => setViewingSyncId(null)}
+        />
+      )}
     </div>
   );
 };

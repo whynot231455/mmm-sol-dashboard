@@ -44,7 +44,7 @@ export const RevenueImpactChart = ({ data }: RevenueImpactChartProps) => {
           Peak ROI: Oct 15
         </div>
 
-        <ResponsiveContainer width="100%" height="100%">
+        <ResponsiveContainer width="100%" height={300} minWidth={0} minHeight={0}>
           <BarChart
             data={data}
             margin={{ top: 20, right: 30, left: 0, bottom: 0 }}
@@ -77,7 +77,7 @@ export const RevenueImpactChart = ({ data }: RevenueImpactChartProps) => {
               }}
               itemStyle={{ color: "#1e293b", fontWeight: 600, fontSize: '12px' }}
               labelStyle={{ color: "#94a3b8", fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', marginBottom: '4px' }}
-              formatter={(val: number | string | undefined, name: string | undefined) => [
+              formatter={(val: unknown, name: string | undefined) => [
                 formatSmartCurrency(Number(val || 0)),
                 name || "",
               ]}

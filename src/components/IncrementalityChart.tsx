@@ -20,7 +20,8 @@ export const IncrementalityChart = ({ data }: IncrementalityChartProps) => {
         <h3 className="text-lg font-bold text-slate-900">Incrementality</h3>
         <p className="text-slate-500 text-sm">Paid vs Organic Lift</p>
       </div>
-      <ResponsiveContainer width="100%" height="80%">
+      <div className="h-[260px] w-full">
+        <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
         <PieChart>
           <Pie
             data={data}
@@ -42,7 +43,8 @@ export const IncrementalityChart = ({ data }: IncrementalityChartProps) => {
           <Tooltip />
           <Legend verticalAlign="bottom" height={36} />
         </PieChart>
-      </ResponsiveContainer>
+        </ResponsiveContainer>
+      </div>
     </div>
   );
 };

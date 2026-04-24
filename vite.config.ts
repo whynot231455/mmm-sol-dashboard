@@ -8,4 +8,18 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+  server: {
+    allowedHosts: ['ace-endopoditic-dacia.ngrok-free.dev']
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom', 'lucide-react'],
+          charts: ['recharts'],
+          utils: ['axios', '@supabase/supabase-js', 'zustand', 'idb-keyval', 'papaparse'],
+        },
+      },
+    },
+  },
 })

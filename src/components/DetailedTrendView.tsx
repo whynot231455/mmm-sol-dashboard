@@ -527,7 +527,7 @@ export const DetailedTrendView = ({ onBack }: DetailedTrendViewProps) => {
         </div>
 
         <div className="h-[500px] w-full mt-4">
-          <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
             <ComposedChart
               data={filteredData}
               margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
@@ -557,9 +557,9 @@ export const DetailedTrendView = ({ onBack }: DetailedTrendViewProps) => {
               />
               <Tooltip
                 formatter={(
-                  value: number | undefined,
+                  value: unknown,
                   name: string | undefined,
-                ) => [formatSmartCurrency(value ?? 0), name ?? ""]}
+                ) => [formatSmartCurrency(Number(value ?? 0)), name ?? ""]}
                 contentStyle={{
                   backgroundColor: "#fff",
                   borderRadius: "12px",

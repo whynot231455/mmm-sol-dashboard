@@ -54,7 +54,8 @@ export const ForecastChart = ({ data }: ForecastChartProps) => {
         </div>
       </div>
 
-      <ResponsiveContainer width="100%" height="85%">
+      <div className="h-[300px] w-full">
+        <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
         <ComposedChart
           data={chartData}
           margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
@@ -93,7 +94,7 @@ export const ForecastChart = ({ data }: ForecastChartProps) => {
               border: "none",
               boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
             }}
-            formatter={(value: number | string | undefined, name?: string) => {
+            formatter={(value: any, name: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
               if (value === null || value === undefined) return [];
               const label =
                 name === "historical"
@@ -129,15 +130,11 @@ export const ForecastChart = ({ data }: ForecastChartProps) => {
             stroke="#871F1E"
             strokeWidth={3}
             strokeDasharray="5 5"
-            dot={(props: {
-              index?: number;
-              cx?: number;
-              cy?: number;
-              payload?: unknown;
-            }) => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            dot={((props: any) => {
               // Only show dots on predicted points, not the connection point
               const index = props.index ?? 0;
-              if (index === 0 || !data[index]?.isPredicted) return null;
+              if (index === 0 || !data[index]?.isPredicted) return <g />;
               return (
                 <circle
                   cx={props.cx}
@@ -148,7 +145,8 @@ export const ForecastChart = ({ data }: ForecastChartProps) => {
                   strokeWidth={2}
                 />
               );
-            }}
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            }) as any}
             connectNulls={false}
           />
 
@@ -161,7 +159,8 @@ export const ForecastChart = ({ data }: ForecastChartProps) => {
             connectNulls={false}
           />
         </ComposedChart>
-      </ResponsiveContainer>
+        </ResponsiveContainer>
+      </div>
     </div>
   );
 };

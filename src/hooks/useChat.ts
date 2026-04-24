@@ -3,6 +3,7 @@ import { useDataStore, type Message, type ChatAttachment, type ChatSession } fro
 import { useMeasureData } from "./useMeasureData";
 import { type AgentTask, type TaskStep } from "../types/agent";
 import { supabase } from "../lib/supabase";
+import { toast } from "sonner";
 
 const BACKEND_URL = 'http://localhost:3001';
 
@@ -192,11 +193,7 @@ export const useChat = () => {
         });
       });
 
-      return mergedSessions.filter(
-        (localSession) =>
-          remoteSessions.some((remoteSession) => remoteSession.id === localSession.id) ||
-          localSession.messages.length > 0
-      );
+      return mergedSessions.sort((a, b) => b.lastUpdated - a.lastUpdated);
     },
     []
   );
@@ -237,8 +234,6 @@ export const useChat = () => {
         if (!isMounted || !remoteSessions) return;
 
         if (remoteSessions.length === 0) {
-          // If remote is empty, we should clear local sessions too (except for those being actively created)
-          setChatSessions([]);
           setIsBootstrappingSessions(false);
           return;
         }
@@ -246,6 +241,7 @@ export const useChat = () => {
         setChatSessions((prevSessions: ChatSession[]) => mergeRemoteSessions(prevSessions, remoteSessions));
       } catch (err) {
         console.error('Failed to fetch remote sessions:', err);
+        toast.error('Failed to fetch chat sessions.');
       } finally {
         if (isMounted) {
           setIsBootstrappingSessions(false);
@@ -280,7 +276,10 @@ export const useChat = () => {
         title: newSession.title,
         last_updated: new Date(newSession.lastUpdated).toISOString()
       }, { onConflict: 'id' }).then(({ error }) => {
-        if (error) console.error(error);
+        if (error) {
+          console.error(error);
+          toast.error('Failed to initialize new chat session.');
+        }
       });
 
       setChatSessions([newSession]);
@@ -376,8 +375,7 @@ export const useChat = () => {
       // 3. Run agent on backend
       // Prepare context to send
       const context = {
-        docs: "", // Documentation is now handled by RAG on the backend
-        metrics: measureData ? `Current Revenue: $${measureData.kpi.revenue.toLocaleString()}, Spend: $${measureData.kpi.spend.toLocaleString()}` : "No metrics loaded"
+        metrics: measureData ? `Current Revenue: $${measureData.kpi.revenue.toLocaleString()}, Spend: $${measureData.kpi.spend.toLocaleString()}` : "No metrics loaded",
       };
 
       const abortController = new AbortController();
@@ -449,6 +447,7 @@ export const useChat = () => {
 
               if (data.error) {
                 console.error('Agent stream error:', data.error);
+                toast.error('Error during chat generation stream.');
               }
             } catch {
               // Ignore malformed or partial SSE payloads
@@ -472,12 +471,14 @@ export const useChat = () => {
             }
           } catch (err) {
             console.error('Failed to perform final task sync:', err);
+            toast.error('Failed to synchronize final chat task.');
           }
         }
       }
 
     } catch (err) {
       console.error('Failed to communicate with agent backend:', err);
+      toast.error('Failed to communicate with backend.');
       addMessage({ 
         role: "assistant", 
         content: "I'm sorry, I'm having trouble connecting to my brain right now. Please ensure the local backend server is running." 
@@ -540,7 +541,7 @@ export const useChat = () => {
         setActiveChatSessionId(newSession.id);
       } catch (err) {
         console.error('Failed to clear all conversations:', err);
-        alert('Failed to clear all conversations. Please try again.');
+        toast.error('Failed to clear all conversations. Please try again.');
       }
     }
   };
@@ -578,6 +579,7 @@ export const useChat = () => {
       
     } catch (err) {
       console.error('Failed to stop generating:', err);
+      toast.error('Failed to cancel generation.');
     }
   }, [activeTaskId]);
 
@@ -596,10 +598,13 @@ export const useChat = () => {
       title: newSession.title,
       last_updated: new Date(newSession.lastUpdated).toISOString()
     }, { onConflict: 'id' }).then(({ error }) => {
-      if (error) console.error(error);
+      if (error) {
+        console.error(error);
+        toast.error('Failed to create new chat session.');
+      }
     });
 
-    setChatSessions([newSession, ...chatSessions]);
+    setChatSessions((prevSessions) => [newSession, ...prevSessions]);
     setActiveChatSessionId(newSession.id);
   };
 

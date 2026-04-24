@@ -55,7 +55,7 @@ export const ActualVsPredictedChart = ({
               border: "none",
               boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
             }}
-            formatter={(value: number | string | undefined) =>
+            formatter={(value: unknown) =>
               formatSmartCurrency(Number(value || 0))
             }
             labelFormatter={(label) => {

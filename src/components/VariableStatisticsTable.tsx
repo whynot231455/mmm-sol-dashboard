@@ -1,11 +1,11 @@
 interface VariableStatisticsTableProps {
   variables: Array<{
     variable: string;
-    coefficient: string;
-    stdError: string;
-    tStatistic: string;
+    coefficient: number;
+    stdError: number;
+    tStatistic: number;
     pValue: number;
-    vif: string;
+    vif: number;
     confidence: number;
   }>;
 }
@@ -64,13 +64,13 @@ export const VariableStatisticsTable = ({ variables }: VariableStatisticsTablePr
                     <span className="text-sm font-semibold text-slate-900">{variable.variable}</span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                    {variable.coefficient}
+                    {variable.coefficient.toFixed(2)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                    {variable.stdError}
+                    {variable.stdError.toFixed(2)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                    {variable.tStatistic}
+                    {variable.tStatistic.toFixed(2)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`text-sm font-bold ${variable.pValue < 0.05 ? 'text-green-600' : 'text-orange-600'}`}>
@@ -78,7 +78,7 @@ export const VariableStatisticsTable = ({ variables }: VariableStatisticsTablePr
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                    {variable.vif}
+                    {variable.vif.toFixed(2)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center gap-2">
@@ -88,7 +88,7 @@ export const VariableStatisticsTable = ({ variables }: VariableStatisticsTablePr
                           style={{ width: `${variable.confidence}%` }}
                         ></div>
                       </div>
-                      <span className="text-xs font-bold text-slate-700">{variable.confidence}%</span>
+                      <span className="text-xs font-bold text-slate-700">{variable.confidence.toFixed(2)}%</span>
                     </div>
                   </td>
                 </tr>

@@ -5,7 +5,7 @@ import { CalibrationImpactChart } from '../components/CalibrationImpactChart';
 import { CoefficientChangesTable } from '../components/CoefficientChangesTable';
 import { TuningParametersPanel } from '../components/TuningParametersPanel';
 import { KPICard } from '../components/KPICard';
-import { TrendingUp, Save, Play, X } from 'lucide-react';
+import { TrendingUp, Save, Play, X, Activity, BarChart3 } from 'lucide-react';
 
 export const CalibratePage = () => {
   const data = useCalibrateData();
@@ -58,58 +58,68 @@ export const CalibratePage = () => {
           </div>
         </div>
 
-        {/* Top Row: Upload + Metrics */}
+        {/* Primary Calibration Results */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <LiftStudyUpload onFileUpload={handleFileUpload} />
-          
           <KPICard
-            label="MODEL FIT (R²)"
-            value={metrics.modelFit.toFixed(2)}
-            trend="+2.1%"
+            label="BASELINE SALES"
+            value={`$${(metrics.baselineSales / 1000).toFixed(1)}k`}
+            trend="Org. Gravity"
+            trendDirection="up"
+            icon={<Activity size={20} />}
+          />
+          <KPICard
+            label="TOTAL MEDIA IMPACT"
+            value={`$${(metrics.totalMediaImpact / 1000).toFixed(1)}k`}
+            trend="+12.4%"
             trendDirection="up"
             icon={<TrendingUp size={20} />}
           />
-          
-          <KPICard
-            label="MAPE"
-            value={`${metrics.mape.toFixed(1)}%`}
-            trend="+0.5%"
-            trendDirection="up"
-            icon={<TrendingUp size={20} />}
-          />
-        </div>
-
-        {/* Second Row: Active Studies + ROI Delta */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
-            <ActiveStudiesList studies={activeStudies} onToggle={toggleStudy} />
-          </div>
-          
           <KPICard
             label="EST. ROI DELTA"
             value={`+${metrics.roiDelta}%`}
             trend="Projected"
             trendDirection="up"
-            icon={<TrendingUp size={20} />}
+            icon={<BarChart3 size={20} />}
           />
         </div>
 
-        {/* Calibration Impact Chart */}
-        <CalibrationImpactChart data={impactData} />
+        {/* Attribution across channels */}
+        <div className="grid grid-cols-1 gap-6">
+           <CalibrationImpactChart data={impactData} />
+        </div>
 
-        {/* Bottom Row: Coefficient Changes + Tuning Parameters */}
+        {/* Configuration Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2">
+            <ActiveStudiesList studies={activeStudies} onToggle={toggleStudy} />
+          </div>
+          <LiftStudyUpload onFileUpload={handleFileUpload} />
+        </div>
+
+        {/* Technical Details & Tuning */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2">
             <CoefficientChangesTable changes={coefficientChanges} />
           </div>
-          
-          <TuningParametersPanel
-            calibrationStrength={tuningParams.calibrationStrength}
-            onCalibrationStrengthChange={tuningParams.setCalibrationStrength}
-            priorWeight={tuningParams.priorWeight}
-            onPriorWeightChange={tuningParams.setPriorWeight}
-            onReset={handleReset}
-          />
+          <div className="space-y-6">
+            <TuningParametersPanel
+              calibrationStrength={tuningParams.calibrationStrength}
+              onCalibrationStrengthChange={tuningParams.setCalibrationStrength}
+              priorWeight={tuningParams.priorWeight}
+              onPriorWeightChange={tuningParams.setPriorWeight}
+              onReset={handleReset}
+            />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
+                <p className="text-slate-500 text-xs font-medium mb-1 uppercase tracking-wider">Model Fit</p>
+                <p className="text-xl font-bold text-slate-900">{metrics.modelFit.toFixed(3)}</p>
+              </div>
+              <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
+                <p className="text-slate-500 text-xs font-medium mb-1 uppercase tracking-wider">MAPE</p>
+                <p className="text-xl font-bold text-slate-900">{metrics.mape.toFixed(1)}%</p>
+              </div>
+            </div>
+          </div>
         </div>
     </div>
   );

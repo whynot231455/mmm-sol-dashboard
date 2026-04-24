@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Mail, Lock, User, BarChart3, Moon } from 'lucide-react';
 import { useDataStore } from '../store/useDataStore';
+import { supabase } from '../lib/supabase';
 
 export const SignUpPage: React.FC = () => {
     const { setActivePage } = useDataStore();
@@ -8,18 +9,48 @@ export const SignUpPage: React.FC = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
+    const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-    const handleSignUp = (e: React.FormEvent) => {
+    const handleSignUp = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
-        setTimeout(() => {
-            setIsLoading(false);
+        setErrorMessage(null);
+        setSuccessMessage(null);
+
+        const { data, error } = await supabase.auth.signUp({
+            email: email.trim(),
+            password,
+            options: {
+                data: {
+                    full_name: name.trim(),
+                },
+            },
+        });
+
+        setIsLoading(false);
+
+        if (error) {
+            setErrorMessage(error.message);
+            return;
+        }
+
+        if (data.session) {
             setActivePage('measure');
-        }, 1500);
+            return;
+        }
+
+        setSuccessMessage('Account created. Check your email to confirm your account, then log in.');
     };
 
     return (
-        <div className="min-h-screen flex font-['Inter',sans-serif] selection:bg-brand-primary/10">
+        <div className="relative min-h-screen flex font-['Inter',sans-serif] selection:bg-brand-primary/10">
+                        {/* Full-screen loading overlay */}
+            {isLoading && (
+                <div className="absolute inset-0 z-50 bg-white/80 backdrop-blur-sm flex items-center justify-center">
+                    <div className="w-8 h-8 border-2 border-slate-200 border-t-[#450a0a] rounded-full animate-spin" />
+                </div>
+            )}
             {/* Left Side: Marketing Content & Glassmorphism Card */}
             <div className="hidden lg:block lg:w-[60%] relative overflow-hidden bg-[#0A0A0B]">
                 <div 
@@ -72,12 +103,13 @@ export const SignUpPage: React.FC = () => {
                     <form onSubmit={handleSignUp} className="space-y-5">
                         <div className="space-y-4">
                             <div className="space-y-1.5">
-                                <label className="text-xs font-bold text-slate-600 ml-1">Full Name</label>
+                                <label htmlFor="signup-name" className="text-xs font-bold text-slate-600 ml-1">Full Name</label>
                                 <div className="relative group">
                                     <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#450a0a] transition-colors">
                                         <User size={18} />
                                     </div>
                                     <input
+                                        id="signup-name"
                                         type="text"
                                         required
                                         className="w-full bg-[#F9FAFB] border border-slate-200 rounded-2xl py-3 pl-12 pr-4 text-slate-900 text-sm font-semibold focus:border-[#450a0a] outline-none focus:ring-4 focus:ring-[#450a0a]/5 transition-all"
@@ -89,12 +121,13 @@ export const SignUpPage: React.FC = () => {
                             </div>
 
                             <div className="space-y-1.5">
-                                <label className="text-xs font-bold text-slate-600 ml-1">Work Email</label>
+                                <label htmlFor="signup-email" className="text-xs font-bold text-slate-600 ml-1">Work Email</label>
                                 <div className="relative group">
                                     <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#450a0a] transition-colors">
                                         <Mail size={18} />
                                     </div>
                                     <input
+                                        id="signup-email"
                                         type="email"
                                         required
                                         className="w-full bg-[#F9FAFB] border border-slate-200 rounded-2xl py-3 pl-12 pr-4 text-slate-900 text-sm font-semibold focus:border-[#450a0a] outline-none focus:ring-4 focus:ring-[#450a0a]/5 transition-all"
@@ -106,12 +139,13 @@ export const SignUpPage: React.FC = () => {
                             </div>
 
                             <div className="space-y-1.5">
-                                <label className="text-xs font-bold text-slate-600 ml-1">Password</label>
+                                <label htmlFor="signup-password" className="text-xs font-bold text-slate-600 ml-1">Password</label>
                                 <div className="relative group">
                                     <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#450a0a] transition-colors">
                                         <Lock size={18} />
                                     </div>
                                     <input
+                                        id="signup-password"
                                         type="password"
                                         required
                                         className="w-full bg-[#F9FAFB] border border-slate-200 rounded-2xl py-3 pl-12 pr-4 text-slate-900 text-sm font-semibold focus:border-[#450a0a] outline-none focus:ring-4 focus:ring-[#450a0a]/5 transition-all"
@@ -139,6 +173,18 @@ export const SignUpPage: React.FC = () => {
                                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                             ) : "Sign Up"}
                         </button>
+
+                        {errorMessage ? (
+                            <p className="text-sm font-medium text-red-700" role="alert">
+                                {errorMessage}
+                            </p>
+                        ) : null}
+
+                        {successMessage ? (
+                            <p className="text-sm font-medium text-emerald-700" role="status">
+                                {successMessage}
+                            </p>
+                        ) : null}
                     </form>
 
                     {/* Social Login */}
@@ -179,3 +225,6 @@ export const SignUpPage: React.FC = () => {
         </div>
     );
 };
+
+
+

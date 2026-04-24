@@ -81,10 +81,7 @@ function formatChatHistory(history: ChatHistoryEntry[]): string {
   return history.map(m => `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.content}`).join('\n');
 }
 
-/**
- * Resumes and runs an agent task on the server using structured tools and memory.
- * Optionally supports a callback for streaming the final synthesis.
- */
+
 export async function runAgent(
   taskId: string,
   context: { docs: string; metrics: string },
@@ -347,17 +344,6 @@ Final Polished Answer:
     await supabase.from('agent_tasks').update({
       status: 'completed',
     }).eq('id', taskId);
-
-    // Persist messages to chat_messages table for long-term memory
-    if (task.session_id) {
-      console.log('Attempting to persist messages for session:', task.session_id);
-      const insertPayload = [
-        { session_id: task.session_id, role: 'user', content: task.goal },
-        { session_id: task.session_id, role: 'assistant', content: cleanedAnswer }
-      ];
-      const { error: persistError } = await supabase.from('chat_messages').insert(insertPayload);
-      if (persistError) console.error('Failed to persist chat messages:', persistError);
-    }
 
     // Insert synthesis step for audit trail
     await supabase.from('agent_steps').insert({
