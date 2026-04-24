@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useDataStore } from '../store/useDataStore';
 import { AlertCircle, Check, Loader2 } from 'lucide-react';
-import { meridianApi } from '../services/meridianApi';
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -30,12 +29,11 @@ export const ColumnMapping = () => {
     try {
       setMapping({ ...mapping });
       
-      // Trigger Background Processing (Handshake)
+      // Trigger Background Processing (Simulated)
       setIsProcessing(true);
       
-      // We don't 'await' the full training, just the initiation
-      // meridianApi.trainModel() returns as soon as the task is queued
-      await meridianApi.trainModel();
+      // Artificial delay for effect
+      await new Promise(resolve => setTimeout(resolve, 800));
       
       // Navigate to full-page success transition
       setActivePage('success');

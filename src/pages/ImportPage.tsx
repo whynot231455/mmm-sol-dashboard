@@ -16,14 +16,13 @@ import { parseCSV } from "../lib/csvParser";
 import { ColumnMapping } from "../components/ColumnMapping";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
-import { meridianApi } from "../services/meridianApi";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
 export const ImportPage = () => {
-  const { setData, rawData, headers, mapping, setMeridianResults } = useDataStore();
+  const { setData, rawData, headers, mapping } = useDataStore();
   const [isDragging, setIsDragging] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -53,26 +52,22 @@ export const ImportPage = () => {
 
         setData(result.data, result.headers);
         
-        // Call Meridian Backend
-        const meridianResults = await meridianApi.importData(file);
-        setMeridianResults(meridianResults);
-        
         setProcessingResult({ 
           success: true, 
-          message: "Data imported and Meridian model validated successfully." 
+          message: "Data imported successfully." 
         });
       } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : "Failed to process data with Meridian backend.";
+        const message = err instanceof Error ? err.message : "Failed to process data.";
         setError(message);
         setProcessingResult({ 
           success: false, 
-          message: "Meridian processing failed." 
+          message: "Import failed." 
         });
       } finally {
         setIsProcessing(false);
       }
     },
-    [setData, setMeridianResults],
+    [setData],
   );
 
   const onDrop = useCallback(
@@ -143,7 +138,7 @@ export const ImportPage = () => {
           </h1>
           <p className="text-slate-500 mt-2 max-w-2xl">
             Upload your raw marketing channel data. We support CSV files for
-            automatic schema detection and Meridian model validation.
+            automatic schema detection and model validation.
           </p>
         </div>
         <button className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors shadow-sm">
@@ -222,7 +217,7 @@ export const ImportPage = () => {
             {isProcessing ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
-                Running Meridian Model Validation...
+                Validating Data Schema...
               </>
             ) : processingResult?.success ? (
               <>
@@ -298,7 +293,6 @@ export const ImportPage = () => {
                 </div>
                 
                 <button 
-                  onClick={() => meridianApi.trainModel()}
                   className={cn(
                     "w-full py-3 rounded-xl font-bold mt-6 flex items-center justify-center gap-2 transition-all",
                     metrics.needsRetraining 

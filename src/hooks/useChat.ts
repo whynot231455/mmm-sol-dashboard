@@ -3,7 +3,7 @@ import { useDataStore, type Message, type ChatAttachment, type ChatSession } fro
 import { useMeasureData } from "./useMeasureData";
 import { type AgentTask, type TaskStep } from "../types/agent";
 import { supabase } from "../lib/supabase";
-import type { MeridianVariableStat } from "../services/meridianApi";
+import { toast } from "sonner";
 
 const BACKEND_URL = 'http://localhost:3001';
 
@@ -241,6 +241,7 @@ export const useChat = () => {
         setChatSessions((prevSessions: ChatSession[]) => mergeRemoteSessions(prevSessions, remoteSessions));
       } catch (err) {
         console.error('Failed to fetch remote sessions:', err);
+        toast.error('Failed to fetch chat sessions.');
       } finally {
         if (isMounted) {
           setIsBootstrappingSessions(false);
@@ -275,7 +276,10 @@ export const useChat = () => {
         title: newSession.title,
         last_updated: new Date(newSession.lastUpdated).toISOString()
       }, { onConflict: 'id' }).then(({ error }) => {
-        if (error) console.error(error);
+        if (error) {
+          console.error(error);
+          toast.error('Failed to initialize new chat session.');
+        }
       });
 
       setChatSessions([newSession]);
@@ -370,16 +374,8 @@ export const useChat = () => {
 
       // 3. Run agent on backend
       // Prepare context to send
-      const { meridianResults } = useDataStore.getState();
       const context = {
-        docs: "", // Documentation is now handled by RAG on the backend
         metrics: measureData ? `Current Revenue: $${measureData.kpi.revenue.toLocaleString()}, Spend: $${measureData.kpi.spend.toLocaleString()}` : "No metrics loaded",
-        meridianResults: meridianResults ? {
-            rSquared: meridianResults.metrics.rSquared.toFixed(4),
-            mape: meridianResults.metrics.mape.toFixed(2) + "%",
-            modelStatus: meridianResults.modelInfo.status,
-            topChannels: meridianResults.variableStats.slice(0, 3).map((s: MeridianVariableStat) => `${s.variable} (Coef: ${s.coefficient})`).join(", ")
-        } : null
       };
 
       const abortController = new AbortController();
@@ -451,6 +447,7 @@ export const useChat = () => {
 
               if (data.error) {
                 console.error('Agent stream error:', data.error);
+                toast.error('Error during chat generation stream.');
               }
             } catch {
               // Ignore malformed or partial SSE payloads
@@ -474,12 +471,14 @@ export const useChat = () => {
             }
           } catch (err) {
             console.error('Failed to perform final task sync:', err);
+            toast.error('Failed to synchronize final chat task.');
           }
         }
       }
 
     } catch (err) {
       console.error('Failed to communicate with agent backend:', err);
+      toast.error('Failed to communicate with backend.');
       addMessage({ 
         role: "assistant", 
         content: "I'm sorry, I'm having trouble connecting to my brain right now. Please ensure the local backend server is running." 
@@ -542,7 +541,7 @@ export const useChat = () => {
         setActiveChatSessionId(newSession.id);
       } catch (err) {
         console.error('Failed to clear all conversations:', err);
-        alert('Failed to clear all conversations. Please try again.');
+        toast.error('Failed to clear all conversations. Please try again.');
       }
     }
   };
@@ -580,6 +579,7 @@ export const useChat = () => {
       
     } catch (err) {
       console.error('Failed to stop generating:', err);
+      toast.error('Failed to cancel generation.');
     }
   }, [activeTaskId]);
 
@@ -598,7 +598,10 @@ export const useChat = () => {
       title: newSession.title,
       last_updated: new Date(newSession.lastUpdated).toISOString()
     }, { onConflict: 'id' }).then(({ error }) => {
-      if (error) console.error(error);
+      if (error) {
+        console.error(error);
+        toast.error('Failed to create new chat session.');
+      }
     });
 
     setChatSessions((prevSessions) => [newSession, ...prevSessions]);

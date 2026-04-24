@@ -3,21 +3,37 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import type { StateStorage } from 'zustand/middleware';
 import { get, set as idbSet, del } from 'idb-keyval';
 import { supabase } from '../lib/supabase';
-import type { MeridianResults } from '../services/meridianApi';
+import type { IntegrationStatus } from '../components/IntegrationCard';
+import { toast } from 'sonner';
 
 // Custom storage for Zustand persistence using IndexedDB (via idb-keyval)
 // This enables storing large datasets that exceed localStorage's ~5MB limit.
 const storage: StateStorage = {
     getItem: async (name: string): Promise<string | null> => {
-        return (await get(name)) || null;
+        try {
+            return (await get(name)) || null;
+        } catch (error) {
+            console.error('IndexedDB getItem error:', error);
+            return null;
+        }
     },
     setItem: async (name: string, value: string): Promise<void> => {
-        await idbSet(name, value);
+        try {
+            await idbSet(name, value);
+        } catch (error) {
+            console.error('IndexedDB setItem error:', error);
+        }
     },
     removeItem: async (name: string): Promise<void> => {
-        await del(name);
+        try {
+            await del(name);
+        } catch (error) {
+            console.error('IndexedDB removeItem error:', error);
+        }
     },
 };
+
+let pollingInterval: number | null = null;
 
 interface ColumnMapping {
     date?: string;
@@ -139,6 +155,26 @@ export interface ChatSession {
     lastUpdated: number;
 }
 
+export interface Integration {
+    id: string;
+    platform_id: string;
+    status: IntegrationStatus;
+    account_name: string;
+    account_id: string;
+    config: Record<string, unknown>;
+    last_synced_at: string | null;
+    created_at?: string;
+}
+
+export interface AdPerformanceRecord {
+    date: string;
+    campaign_name: string;
+    spend: string;
+    impressions?: number;
+    clicks?: number;
+    created_at?: string;
+}
+
 interface DataState {
     rawData: Record<string, unknown>[];
     headers: string[];
@@ -152,10 +188,12 @@ interface DataState {
     channelColors: Record<string, string>;
     chatSessions: ChatSession[];
     activeChatSessionId: string | null;
-    meridianResults: MeridianResults | null;
     isProcessing: boolean;
+    hasHydrated: boolean;
 
-
+    integrations: Integration[];
+    recentSyncRecords: AdPerformanceRecord[];
+    
     // Actions
     setData: (data: Record<string, unknown>[], headers: string[]) => void;
     setMapping: (mapping: ColumnMapping) => void;
@@ -168,8 +206,15 @@ interface DataState {
     setChannelColor: (channel: string, color: string) => void;
     setChatSessions: (sessions: ChatSession[] | ((prev: ChatSession[]) => ChatSession[])) => void;
     setActiveChatSessionId: (id: string | null) => void;
-    setMeridianResults: (results: MeridianResults | null) => void;
     setIsProcessing: (isProcessing: boolean) => void;
+    setHasHydrated: (hasHydrated: boolean) => void;
+    setIntegrations: (integrations: Integration[]) => void;
+    fetchIntegrations: () => Promise<void>;
+    addIntegration: (integration: Omit<Integration, 'id' | 'created_at'>) => Promise<void>;
+    removeIntegration: (id: string) => Promise<void>;
+    startPollingIntegrations: () => void;
+    stopPollingIntegrations: () => void;
+    fetchRecentSyncRecords: (integrationId: string) => Promise<void>;
 
     addMessageToSession: (sessionId: string, message: Message) => void;
     updateMessageInSession: (sessionId: string, messageId: string, content: string) => void;
@@ -203,6 +248,7 @@ const syncSessionMetadata = (session: ChatSession) => {
     }, { onConflict: 'id' }).then(({ error }) => {
         if (error) {
             console.error('Failed to sync session', error);
+            toast.error('Failed to sync chat session.');
         }
     });
 };
@@ -216,6 +262,7 @@ const syncSessionMessage = (sessionId: string, message: Message) => {
     }, { onConflict: 'id' }).then(({ error }) => {
         if (error) {
             console.error('Failed to sync chat message', error);
+            toast.error('Failed to sync chat message.');
         }
     });
 };
@@ -375,8 +422,10 @@ export const useDataStore = create<DataState>()(
             },
             chatSessions: [],
             activeChatSessionId: null,
-            meridianResults: null,
             isProcessing: false,
+            hasHydrated: false,
+            integrations: [],
+            recentSyncRecords: [],
 
 
             setData: (data, headers) => set((state) => {
@@ -467,8 +516,8 @@ export const useDataStore = create<DataState>()(
                 chatSessions: typeof sessions === 'function' ? sessions(state.chatSessions) : sessions
             })),
             setActiveChatSessionId: (id) => set({ activeChatSessionId: id }),
-            setMeridianResults: (results) => set({ meridianResults: results }),
             setIsProcessing: (isProcessing) => set({ isProcessing }),
+            setHasHydrated: (hasHydrated) => set({ hasHydrated }),
             addMessageToSession: (sessionId, message) => {
                 let updatedSession: ChatSession | null = null;
                 set((state) => ({
@@ -527,6 +576,7 @@ export const useDataStore = create<DataState>()(
                     await supabase.from('chat_sessions').delete().eq('id', id);
                 } catch (err) {
                     console.error('Failed to delete chat session from Supabase:', err);
+                    toast.error('Failed to delete chat session.');
                 }
 
                 set((state) => ({
@@ -621,14 +671,117 @@ export const useDataStore = create<DataState>()(
                     'Bing_Search_Brand': '#00CED1',
                     'Adtraction_Affiliate': '#4169E1'
                 },
-                meridianResults: null,
-                isProcessing: false
-
+                isProcessing: false,
+                integrations: [],
             }),
+
+            setIntegrations: (integrations) => set({ integrations }),
+            fetchIntegrations: async () => {
+                const { data: { user } } = await supabase.auth.getUser();
+                if (!user) {
+                    set({ integrations: [] });
+                    return;
+                }
+
+                const { data, error } = await supabase
+                    .from('user_integrations')
+                    .select('id, platform_id, status, account_name, account_id, last_synced_at, created_at, config')
+                    .eq('user_id', user.id)
+                    .order('created_at', { ascending: false });
+                
+                if (error) {
+                    console.error('Error fetching integrations:', error);
+                    toast.error('Failed to fetch integrations.');
+                    return;
+                }
+                set({ integrations: data || [] });
+            },
+            addIntegration: async (integration) => {
+                const { data: { user } } = await supabase.auth.getUser();
+                
+                if (!user) {
+                    set({ activePage: 'login' });
+                    throw new Error('Your session has expired. Please log in again.');
+                }
+
+                const { data, error } = await supabase
+                    .from('user_integrations')
+                    .upsert({ ...integration, user_id: user.id }, { onConflict: 'user_id,platform_id' })
+                    .select()
+                    .single();
+                
+                if (error) {
+                    console.error('Error adding integration:', error);
+                    toast.error('Failed to add integration.');
+                    throw error;
+                }
+                
+                set((state) => ({
+                    integrations: [data, ...state.integrations.filter(i => i.platform_id !== data.platform_id)]
+                }));
+            },
+            removeIntegration: async (id) => {
+                const { error } = await supabase
+                    .from('user_integrations')
+                    .delete()
+                    .eq('id', id);
+                
+                if (error) {
+                    console.error('Error removing integration:', error);
+                    toast.error('Failed to remove integration.');
+                    return;
+                }
+                
+                set((state) => ({
+                    integrations: state.integrations.filter(i => i.id !== id)
+                }));
+            },
+            startPollingIntegrations: () => {
+                if (pollingInterval) return;
+                
+                // Poll every 2 seconds
+                pollingInterval = window.setInterval(async () => {
+                    const { integrations, fetchIntegrations } = useDataStore.getState();
+                    const hasSyncing = integrations.some(i => i.status === 'syncing');
+                    
+                    if (hasSyncing) {
+                        await fetchIntegrations();
+                    } else {
+                        // If nothing is syncing anymore, we can stop polling to save resources
+                        // but usually we let the component manage the lifecycle.
+                        // For safety, we'll keep polling as long as the component wants it.
+                    }
+                }, 2000);
+            },
+            stopPollingIntegrations: () => {
+                if (pollingInterval) {
+                    window.clearInterval(pollingInterval);
+                    pollingInterval = null;
+                }
+            },
+            fetchRecentSyncRecords: async (integrationId) => {
+                const { data, error } = await supabase
+                    .from('ad_performance_data')
+                    .select('date, campaign_name, spend, impressions, clicks, created_at')
+                    .eq('integration_id', integrationId)
+                    .order('created_at', { ascending: false })
+                    .limit(10);
+                
+                if (error) {
+                    console.error('Error fetching recent sync records:', error);
+                    toast.error('Failed to fetch recent sync records.');
+                    return;
+                }
+                
+                set({ recentSyncRecords: data || [] });
+            },
         }),
         {
             name: 'mmm-dashboard-storage', // Key for IndexedDB
             storage: createJSONStorage(() => storage),
+            onRehydrateStorage: () => (state) => {
+                state?.setHasHydrated(true);
+            },
             version: 1,
             migrate: (persistedState: unknown) => {
                 if (!persistedState || typeof persistedState !== 'object') {
@@ -655,9 +808,19 @@ export const useDataStore = create<DataState>()(
                 channelColors: state.channelColors,
                 chatSessions: state.chatSessions.map(stripSessionAttachmentData),
                 activeChatSessionId: state.activeChatSessionId,
-                meridianResults: state.meridianResults,
                 isProcessing: state.isProcessing,
-
+                // Strip the config object of each integration before persisting to IndexedDB.
+                // This ensures that even if a secret were accidentally fetched, it never survives a browser reload.
+                integrations: state.integrations.map((integration) => ({
+                    ...integration,
+                    config: {
+                        sync_progress: integration.config?.sync_progress,
+                        last_message: integration.config?.last_message,
+                        meta_user_name: integration.config?.meta_user_name,
+                        selected_account: integration.config?.selected_account,
+                        oauth_completed_at: integration.config?.oauth_completed_at,
+                    },
+                })),
             }),
         }
     )

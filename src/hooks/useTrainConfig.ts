@@ -63,7 +63,7 @@ export const useTrainConfig = () => {
     const [config, setConfig] = useState<TrainConfig>({
         targetVariable: mapping.revenue || '',
         trainTestRatio: '80/20',
-        modelType: 'Bayesian (Meridian)',
+        modelType: 'Bayesian Modeling',
         trainingWindow: {
             startDate: dateConstraints.min,
             endDate: dateConstraints.max

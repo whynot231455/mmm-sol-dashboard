@@ -125,7 +125,7 @@ export const TrainPage = () => {
                     onChange={(e) => setConfig(prev => ({ ...prev, modelType: e.target.value }))}
                     className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-primary/20 transition-all"
                   >
-                    <option value="Bayesian (Meridian)">Bayesian (Meridian)</option>
+                    <option value="Bayesian Modeling">Bayesian Modeling</option>
                     <option value="OLS Regression">OLS Regression</option>
                     <option value="Ridge Regression">Ridge Regression</option>
                   </select>

@@ -102,9 +102,9 @@ export const CalibrationImpactChart = ({
               textTransform: "uppercase",
               letterSpacing: "0.05em",
             }}
-            formatter={(value: unknown, name: string) => [
+            formatter={(value: unknown, name?: string) => [
               `$${(Number(value || 0)).toLocaleString()}`,
-              name.charAt(0).toUpperCase() + name.slice(1)
+              (name || '').charAt(0).toUpperCase() + (name || '').slice(1)
             ]}
           />
 

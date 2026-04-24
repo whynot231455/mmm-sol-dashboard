@@ -1,46 +1,46 @@
 import { useMemo } from 'react';
 import { useDataStore } from '../store/useDataStore';
-import type { MeridianResults, MeridianVariableStat } from '../services/meridianApi';
 
-interface ValidationChartPoint {
-    date: Date;
-    actual: number;
-    predicted: number;
+interface MMMVariableStat {
+    variable: string;
+    coefficient: number;
+    stdError: number;
+    tStatistic: number;
+    pValue: number;
+    vif: number;
+    confidence: number;
+    status?: string;
 }
 
-interface ValidationResidualPoint {
-    predicted: number;
-    residual: number;
+export interface MMMResults {
+    timestamp: string;
+    metrics: {
+        rSquared: number;
+        adjustedRSquared: number;
+        mape: number;
+        durbinWatson: number;
+    };
+    chartData: Array<{ date: string; actual: number; predicted: number }>;
+    variableStats: MMMVariableStat[];
+    modelInfo: {
+        version: string;
+        status: string;
+        lastUpdated: string;
+    };
 }
 
 export const useValidateData = (options?: { enabled?: boolean }) => {
-    const { rawData, mapping, meridianResults } = useDataStore();
+    const { rawData, mapping } = useDataStore();
     const enabled = options?.enabled ?? true;
 
     return useMemo(() => {
         if (!enabled) return null;
 
-        // prioritize data from store if it exists
-        if (meridianResults) {
-            return {
-                ...meridianResults,
-                // Ensure chartData matches the component expectation (dates as Date objects if needed)
-                chartData: meridianResults.chartData.map((d): ValidationChartPoint => ({
-                    ...d,
-                    date: new Date(d.date)
-                })),
-                residuals: meridianResults.chartData.map((d): ValidationResidualPoint => ({
-                    predicted: d.predicted,
-                    residual: d.actual - d.predicted
-                }))
-            } as MeridianResults & { chartData: ValidationChartPoint[]; residuals: ValidationResidualPoint[] };
-        }
-
         if (!rawData.length || !mapping.date || !mapping.revenue || !mapping.channel) {
             return null;
         }
 
-        // --- Mock Logic (Fallback) ---
+        // --- Mock Logic ---
         
         const dateMap = new Map<string, { date: Date; actual: number; predicted: number }>();
 
@@ -114,7 +114,7 @@ export const useValidateData = (options?: { enabled?: boolean }) => {
             pValue: seeded(channel + '_p') < 0.7 ? 0.001 : seeded(channel + '_p2') * 0.5,
             vif: Number((1 + seeded(channel + '_v') * 3).toFixed(2)),
             confidence: seeded(channel + '_c') > 0.3 ? 95 : 90
-        })) as MeridianVariableStat[];
+        })) as MMMVariableStat[];
 
         return {
             metrics: {
@@ -132,5 +132,5 @@ export const useValidateData = (options?: { enabled?: boolean }) => {
                 lastUpdated: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
             }
         };
-    }, [rawData, mapping, enabled, meridianResults]);
+    }, [rawData, mapping, enabled]);
 };

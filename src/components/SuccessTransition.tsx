@@ -65,7 +65,7 @@ export const SuccessTransition = () => {
             Data Initialized
           </h1>
           <p className="text-slate-400 font-medium leading-relaxed">
-            Your marketing architecture is successfully mapped. The Meridian engine is now processing your dataset in the background.
+            Your marketing architecture is successfully mapped. The analytics engine is now processing your dataset in the background.
           </p>
         </div>
 
@@ -83,7 +83,7 @@ export const SuccessTransition = () => {
           </div>
           <p className="text-[10px] text-slate-500 font-bold flex items-center justify-center gap-2">
             <Loader2 size={10} className="animate-spin text-brand-primary" />
-            STABILIZING BAYESIAN PRIORS...
+            CALIBRATING MODEL...
           </p>
         </div>
 

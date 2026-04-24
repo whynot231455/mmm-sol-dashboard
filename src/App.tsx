@@ -1,8 +1,12 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { Layout } from "./components/Layout";
 import { SuccessTransition } from "./components/SuccessTransition";
 import { useDataStore } from "./store/useDataStore";
 import { Loader2 } from "lucide-react";
+import { useDashboardSync } from "./hooks/useDashboardSync";
+import { AuthCallbackPage } from "./pages/AuthCallbackPage";
+import { supabase } from "./lib/supabase";
+import { ToastProvider } from "./components/ui/ToastProvider";
 
 const ImportPage = lazy(() => import("./pages/ImportPage").then((mod) => ({ default: mod.ImportPage })));
 const ConnectPage = lazy(() => import("./pages/ConnectPage").then((mod) => ({ default: mod.ConnectPage })));
@@ -33,13 +37,61 @@ const PlaceholderPage = ({ title }: { title: string }) => (
   </div>
 );
 
-import { useDashboardSync } from "./hooks/useDashboardSync";
+function MainApp() {
+  const { activePage, setActivePage, hasHydrated } = useDataStore();
+  // Prevents any page rendering until we know the user's auth state.
+  const [authResolved, setAuthResolved] = useState(false);
 
-function App() {
-  const { activePage } = useDataStore();
-  
+  useEffect(() => {
+    if (!hasHydrated) return;
+    const requestedPage = new URLSearchParams(window.location.search).get('page');
+
+    // Use onAuthStateChange as the single source of truth for routing.
+    // The INITIAL_SESSION event fires immediately with the current session,
+    // so we no longer need a separate getSession() call.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'INITIAL_SESSION') {
+        if (session) {
+          if (requestedPage) {
+            setActivePage(requestedPage as typeof activePage);
+          } else if (activePage === 'login' || activePage === 'signup') {
+            // User is already logged in — go to dashboard if on an auth page.
+            setActivePage('measure');
+          }
+        } else {
+          // No session — redirect to login unless on a public page.
+          if (activePage !== 'login' && activePage !== 'signup' && activePage !== 'success') {
+            setActivePage('login');
+          }
+        }
+        // Mark auth as resolved so the UI can render.
+        setAuthResolved(true);
+        return;
+      }
+
+      if (event === 'SIGNED_OUT') {
+        setActivePage('login');
+      } else if (event === 'SIGNED_IN') {
+        if (activePage === 'login' || activePage === 'signup') {
+          setActivePage('measure');
+        }
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [hasHydrated, activePage, setActivePage]);
+
   // Enable automatic dashboard state sync to Supabase
   useDashboardSync();
+
+  // Show a full-screen loading state until we know whether user is authed.
+  if (!authResolved) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <Loader2 className="h-8 w-8 animate-spin text-slate-300" />
+      </div>
+    );
+  }
 
   const renderPage = () => {
     switch (activePage) {
@@ -102,6 +154,20 @@ function App() {
         {renderPage()}
       </Suspense>
     </Layout>
+  );
+}
+
+function App() {
+  // Short-circuit for OAuth callback tabs
+  if (window.location.pathname === '/auth/callback') {
+    return <AuthCallbackPage />;
+  }
+
+  return (
+    <>
+      <ToastProvider />
+      <MainApp />
+    </>
   );
 }
 

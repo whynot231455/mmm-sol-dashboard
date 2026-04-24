@@ -71,18 +71,6 @@ interface StoredDocumentChunk {
   metadata: DocChunkMetadata;
 }
 
-interface MeridianAnalysisState {
-  metrics?: {
-    rSquared?: number;
-    mape?: number;
-  };
-  variableStats?: Array<{
-    variable?: string;
-    coefficient?: number;
-    pValue?: number;
-  }>;
-}
-
 export interface Tool {
   name: string;
   description: string;
@@ -297,71 +285,6 @@ Synthesized Answer:
         return res.data.response.trim();
       } catch (err) {
         return `Reasoning error: ${(err as Error).message}`;
-      }
-    },
-  },
-  analyze_meridian_results: {
-    name: 'analyze_meridian_results',
-    description: 'Perform a deep qualitative analysis of the latest Meridian MMM results. Use this when the user asks for insights, performance summaries, or budget recommendations based on the modeling data.',
-    execute: async (query: string) => {
-      try {
-        // 1. Fetch latest results from Supabase
-        const { data: meridianState, error } = await supabase
-          .from('dashboard_state')
-          .select('data')
-          .eq('key', 'meridian_latest_results')
-          .single();
-
-        if (error || !meridianState || !meridianState.data) {
-          return "I don't have any Meridian model results to analyze yet. Please import data and train the model first.";
-        }
-
-        const data = meridianState.data as MeridianAnalysisState;
-        const metrics = data.metrics ?? {};
-        const topChannels = (data.variableStats ?? [])
-          .slice(0, 3)
-          .map((s) => `${s.variable ?? 'Unknown'} (Coef: ${s.coefficient ?? 0}, p-Value: ${(s.pValue ?? 0).toFixed(4)})`)
-          .join(", ");
-
-        // 2. Synthesize analysis using LLM
-        const modelName = process.env.OLLAMA_MODEL || 'gemma3';
-        const ollamaUrl = process.env.OLLAMA_URL || 'http://localhost:11434';
-        
-        const analysisPrompt = `You are a Senior Marketing Strategist. Analyze these Marketing Mix Model (MMM) results:
-- Model Reliability (R-Squared): ${metrics.rSquared?.toFixed(4) || 'N/A'}
-- Error Margin (MAPE): ${metrics.mape?.toFixed(2) || 'N/A'}%
-- Primary Performance Drivers: ${topChannels}
-
-User Inquiry: ${query}
-
-Provide a high-level strategic executive summary (3-4 sentences):
-1. Assess the business confidence in these results.
-2. Highlight which channels are generating the strongest incremental lift.
-3. Propose one specific budget reallocation to optimize overall ROI.
-
-IMPORTANT: Maintain a professional, strategic tone. Do NOT discuss technical execution, software backends, or the underlying math (GPU/OLS). Focus only on marketing growth and efficiency. Speak in English only.`;
-
-        const res = await axios.post(`${ollamaUrl}/api/generate`, {
-          model: modelName,
-          prompt: analysisPrompt,
-          stream: false,
-        });
-
-        const analysis = res.data.response.trim();
-
-        return {
-          answer: `### Strategic Marketing Analysis
-${analysis}
-
----
-**Model Performance Summary:**
-- **Confidence Score (R²):** ${metrics.rSquared?.toFixed(4) || 'N/A'}
-- **Forecast Precision:** ${metrics.mape ? (100 - metrics.mape).toFixed(2) : 'N/A'}%`,
-          isFinal: true
-        };
-
-      } catch (err) {
-        return `Error analyzing Meridian results: ${(err as Error).message}`;
       }
     },
   },

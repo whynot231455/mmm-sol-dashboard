@@ -8,6 +8,9 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+  server: {
+    allowedHosts: ['ace-endopoditic-dacia.ngrok-free.dev']
+  },
   build: {
     rollupOptions: {
       output: {

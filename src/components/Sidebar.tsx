@@ -23,6 +23,7 @@ import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { useDataStore } from "../store/useDataStore";
 import type { PageType } from "../store/useDataStore";
+import { supabase } from "../lib/supabase";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -275,7 +276,10 @@ export const Sidebar = () => {
           )}
         </div>
         <button
-          onClick={() => handleNavigate("login")}
+          onClick={async () => {
+            await supabase.auth.signOut();
+            handleNavigate("login");
+          }}
           className={cn(
             "flex items-center rounded-xl px-4 py-2 text-xs font-black text-slate-500 transition-all uppercase tracking-widest hover:text-brand-primary hover:bg-brand-primary/5",
             isCollapsed ? "w-10 justify-center px-0 lg:mx-auto" : "w-full gap-3",
