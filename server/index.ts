@@ -79,6 +79,54 @@ app.post('/api/agent/run-stream', async (req, res) => {
   }
 });
 
+// Mock Meta Ads Insights Route
+app.get('/api/meta/insights', (req, res) => {
+  const { account_id } = req.query;
+  console.log(`[mock-meta] Fetching insights for account: ${account_id}`);
+  
+  // Realistic mock data shaped exactly like the Meta Graph API response
+  res.json({
+    data: [
+      {
+        campaign_name: "KSA - Ramadan Sales Push",
+        spend: "12400.50",
+        impressions: "980000",
+        clicks: "14200",
+        actions: [
+          { action_type: "purchase", value: "340" },
+          { action_type: "link_click", value: "14200" }
+        ],
+        date_start: "2024-03-01",
+        date_stop: "2024-03-31"
+      },
+      {
+        campaign_name: "UAE - Spring Collection",
+        spend: "8500.25",
+        impressions: "650000",
+        clicks: "9800",
+        actions: [
+          { action_type: "purchase", value: "210" },
+          { action_type: "link_click", value: "9800" }
+        ],
+        date_start: "2024-03-05",
+        date_stop: "2024-03-31"
+      },
+      {
+        campaign_name: "Bahrain - Mid-Season Sale",
+        spend: "3200.00",
+        impressions: "210000",
+        clicks: "3100",
+        actions: [
+          { action_type: "purchase", value: "85" },
+          { action_type: "link_click", value: "3100" }
+        ],
+        date_start: "2024-03-10",
+        date_stop: "2024-03-31"
+      }
+    ]
+  });
+});
+
 app.post('/api/dataiku/upload', async (req, res) => {
   const csvData = req.body;
   const fileName = req.query.fileName || `upload_${Date.now()}.csv`;

@@ -1,9 +1,18 @@
+import React, { useState } from 'react';
+import { formatSmartCurrency } from "../lib/formatters";
+import { ChevronDown, ChevronUp } from "lucide-react";
+
 interface ChannelContributionProps {
   data: Array<{ channel: string; revenue: number; spend: number }>;
 }
-import { formatSmartCurrency } from "../lib/formatters";
 
-export const ChannelContribution = ({ data }: ChannelContributionProps) => {
+export const ChannelContribution = React.memo(({ data }: ChannelContributionProps) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+  
+  // Show top 10 by default, or all if expanded
+  const visibleData = isExpanded ? data : data.slice(0, 10);
+  const hasMore = data.length > 10;
+
   return (
     <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
       <div className="flex items-center justify-between mb-6">
@@ -12,7 +21,7 @@ export const ChannelContribution = ({ data }: ChannelContributionProps) => {
             Channel Contribution
           </h3>
           <p className="text-slate-500 text-sm">
-            Total revenue breakdown by channel source
+            Total revenue breakdown by channel source ({data.length} sources)
           </p>
         </div>
         <div className="flex gap-2 text-xs">
@@ -26,7 +35,7 @@ export const ChannelContribution = ({ data }: ChannelContributionProps) => {
       </div>
 
       <div className="space-y-6">
-        {data.map((item) => (
+        {visibleData.map((item) => (
           <div
             key={item.channel}
             className="flex items-center justify-between group"
@@ -35,7 +44,7 @@ export const ChannelContribution = ({ data }: ChannelContributionProps) => {
               <div className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 font-bold text-xs uppercase">
                 {item.channel.substring(0, 2)}
               </div>
-              <span className="font-medium text-slate-700">{item.channel}</span>
+              <span className="font-medium text-slate-700 truncate">{item.channel}</span>
             </div>
 
             <div className="flex-1 px-4">
@@ -58,13 +67,32 @@ export const ChannelContribution = ({ data }: ChannelContributionProps) => {
 
             <div className="w-24 text-right">
               <span className="font-bold text-slate-900 block">
-                {(item.revenue / item.spend).toFixed(1)}x
+                {(item.revenue / (item.spend || 1)).toFixed(1)}x
               </span>
               <span className="text-xs text-slate-400">ROAS</span>
             </div>
           </div>
         ))}
       </div>
+
+      {hasMore && (
+        <button
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="w-full mt-8 py-3 border-t border-slate-50 text-sm font-bold text-slate-500 hover:text-brand-secondary flex items-center justify-center gap-2 transition-colors"
+        >
+          {isExpanded ? (
+            <>
+              Show Less <ChevronUp size={16} />
+            </>
+          ) : (
+            <>
+              Show {data.length - 10} More Sources <ChevronDown size={16} />
+            </>
+          )}
+        </button>
+      )}
     </div>
   );
-};
+});
+
+ChannelContribution.displayName = 'ChannelContribution';

@@ -35,7 +35,10 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    const { authorizationUrl } = await buildMetaOAuthUrl(user.id);
+    const body = await req.json().catch(() => ({}));
+    const clientRedirectUri = typeof body.redirectUri === "string" ? body.redirectUri : undefined;
+
+    const { authorizationUrl } = await buildMetaOAuthUrl(user.id, clientRedirectUri);
     return new Response(JSON.stringify({ authorizationUrl }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

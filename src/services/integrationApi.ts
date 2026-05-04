@@ -320,7 +320,7 @@ export const integrationApi = {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${session.access_token}`,
       },
-      body: JSON.stringify({}),
+      body: JSON.stringify({ redirectUri: window.location.origin + '/auth/callback' }),
     });
 
     const { data, rawText } = await parseJsonResponse(response);
@@ -352,7 +352,7 @@ export const integrationApi = {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${session.access_token}`,
       },
-      body: JSON.stringify(params),
+      body: JSON.stringify({ ...params, redirectUri: window.location.origin + '/auth/callback' }),
     });
 
     const { data, rawText } = await parseJsonResponse(response);

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useMeasureData } from "../hooks/useMeasureData";
 import { KPICard } from "../components/KPICard";
 import { TrendChart } from "../components/TrendChart";
@@ -27,13 +27,18 @@ export const MeasurePage = () => {
   } = useDataStore();
   const [isExpanded, setIsExpanded] = useState(false);
 
-  const data = useMeasureData({
+  const activeFilters = useMemo(() => ({
     country: persistedFilters.country,
     channel: persistedFilters.channel,
     dateRange: persistedFilters.dateRange,
-  });
+  }), [persistedFilters.country, persistedFilters.channel, persistedFilters.dateRange]);
 
-  if (!data) {
+  const data = useMeasureData(activeFilters);
+
+  const handleExpand = useCallback(() => setIsExpanded(true), []);
+  const handleBack = useCallback(() => setIsExpanded(false), []);
+
+  if (!data.kpi && !data.isLoadingMeta) {
     return (
       <div className="text-center py-24">
         <div className="bg-slate-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -53,18 +58,23 @@ export const MeasurePage = () => {
     );
   }
 
-  const { kpi, trend, channels, filters } = data;
+  const { 
+    kpi = { revenue: 0, spend: 0, roi: 0, roas: 0 }, 
+    trend = [], 
+    channels = [], 
+    filters = { countries: ['All'], channels: ['All'] } 
+  } = data;
 
   if (isExpanded) {
-    return <DetailedTrendView onBack={() => setIsExpanded(false)} />;
+    return <DetailedTrendView onBack={handleBack} />;
   }
 
   // Placeholder data for incrementality until we have advanced logic
-  const incrementalityData = [
+  const incrementalityData = useMemo(() => [
     { name: "Paid Search", value: 60 },
     { name: "Social", value: 25 },
     { name: "TV / Other", value: 15 },
-  ];
+  ], []);
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500 pb-12">
@@ -179,7 +189,7 @@ export const MeasurePage = () => {
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
-          <TrendChart data={trend} onExpand={() => setIsExpanded(true)} />
+          <TrendChart data={trend} onExpand={handleExpand} />
         </div>
         <div>
           <IncrementalityChart data={incrementalityData} />

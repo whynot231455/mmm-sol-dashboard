@@ -1,0 +1,39 @@
+{
+  "name": "supabase",
+  "version": "0.1.0",
+  "description": "Repo-local Supabase MCP plugin for database, docs, and development workflows.",
+  "author": {
+    "name": "MMM",
+    "email": "local@workspace.invalid",
+    "url": "https://supabase.com"
+  },
+  "homepage": "https://supabase.com/docs/guides/getting-started/mcp",
+  "repository": "https://github.com/supabase/supabase",
+  "license": "UNLICENSED",
+  "keywords": [
+    "supabase",
+    "mcp"
+  ],
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "Supabase",
+    "shortDescription": "Use Supabase MCP tools in this repo.",
+    "longDescription": "Repo-local Supabase MCP plugin configured for safer project-scoped, read-only development and documentation workflows.",
+    "developerName": "MMM",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Interactive",
+      "Read"
+    ],
+    "websiteURL": "https://supabase.com/docs/guides/getting-started/mcp",
+    "privacyPolicyURL": "https://supabase.com/privacy",
+    "termsOfServiceURL": "https://supabase.com/terms",
+    "defaultPrompt": [
+      "List my Supabase tables using MCP.",
+      "Generate TypeScript types from my schema.",
+      "Search Supabase docs for RLS guidance."
+    ],
+    "brandColor": "#3ECF8E"
+  }
+}

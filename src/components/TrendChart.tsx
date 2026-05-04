@@ -1,4 +1,4 @@
-import { useMemo, useState, useRef, useEffect } from "react";
+import React, { useMemo, useState, useRef, useEffect } from "react";
 import {
   ComposedChart,
   Line,
@@ -188,7 +188,7 @@ const defaultPalette = [
   "#f43f5e",
 ];
 
-export const TrendChart = ({ data, onExpand }: TrendChartProps) => {
+export const TrendChart = React.memo(({ data, onExpand }: TrendChartProps) => {
   const { channelColors, setChannelColor } = useDataStore();
   const [activeChannel, setActiveChannel] = useState<string | null>(null);
 
@@ -327,4 +327,6 @@ export const TrendChart = ({ data, onExpand }: TrendChartProps) => {
       </div>
     </div>
   );
-};
+});
+
+TrendChart.displayName = 'TrendChart';

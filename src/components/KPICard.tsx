@@ -1,3 +1,4 @@
+import React from 'react';
 import { TrendingUp, TrendingDown } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -14,7 +15,7 @@ interface KPICardProps {
   icon: React.ReactNode;
 }
 
-export const KPICard = ({ label, value, trend, trendDirection, icon }: KPICardProps) => {
+export const KPICard = React.memo(({ label, value, trend, trendDirection, icon }: KPICardProps) => {
   return (
     <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
       <div className="flex justify-between items-start mb-4">
@@ -39,4 +40,6 @@ export const KPICard = ({ label, value, trend, trendDirection, icon }: KPICardPr
       </div>
     </div>
   );
-};
+});
+
+KPICard.displayName = 'KPICard';

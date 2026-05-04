@@ -54,10 +54,10 @@ export const createSupabaseAdmin = () => {
   return createClient(supabaseUrl, supabaseServiceKey);
 };
 
-export const getMetaConfig = () => ({
+export const getMetaConfig = (clientRedirectUri?: string) => ({
   appId: getRequiredEnv("META_APP_ID"),
   appSecret: getRequiredEnv("META_APP_SECRET"),
-  redirectUri: getRequiredEnv("META_REDIRECT_URI"),
+  redirectUri: clientRedirectUri || getRequiredEnv("META_REDIRECT_URI"),
   stateSecret: Deno.env.get("META_OAUTH_STATE_SECRET") || getRequiredEnv("META_APP_SECRET"),
 });
 
@@ -111,8 +111,8 @@ export const verifyMetaOAuthState = async (state: string) => {
   return payload;
 };
 
-export const buildMetaOAuthUrl = async (userId: string) => {
-  const { appId, redirectUri } = getMetaConfig();
+export const buildMetaOAuthUrl = async (userId: string, clientRedirectUri?: string) => {
+  const { appId, redirectUri } = getMetaConfig(clientRedirectUri);
   const state = await createMetaOAuthState(userId);
   const url = new URL("https://www.facebook.com/dialog/oauth");
   url.searchParams.set("client_id", appId);
@@ -123,8 +123,8 @@ export const buildMetaOAuthUrl = async (userId: string) => {
   return { authorizationUrl: url.toString(), state };
 };
 
-export const exchangeMetaOAuthCode = async (code: string) => {
-  const { appId, appSecret, redirectUri } = getMetaConfig();
+export const exchangeMetaOAuthCode = async (code: string, clientRedirectUri?: string) => {
+  const { appId, appSecret, redirectUri } = getMetaConfig(clientRedirectUri);
   const baseUrl = `https://graph.facebook.com/${META_GRAPH_VERSION}/oauth/access_token`;
 
   const exchangeToken = async (params: Record<string, string>) => {

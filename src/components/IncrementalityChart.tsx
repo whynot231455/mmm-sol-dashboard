@@ -1,3 +1,4 @@
+import React from "react";
 import {
   PieChart,
   Pie,
@@ -13,7 +14,7 @@ interface IncrementalityChartProps {
 
 const COLORS = ["#871F1E", "#ED1B24", "#F58726", "#FACC00"];
 
-export const IncrementalityChart = ({ data }: IncrementalityChartProps) => {
+export const IncrementalityChart = React.memo(({ data }: IncrementalityChartProps) => {
   return (
     <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm h-[400px]">
       <div className="mb-6">
@@ -47,4 +48,6 @@ export const IncrementalityChart = ({ data }: IncrementalityChartProps) => {
       </div>
     </div>
   );
-};
+});
+
+IncrementalityChart.displayName = 'IncrementalityChart';

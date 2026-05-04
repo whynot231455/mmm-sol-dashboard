@@ -28,6 +28,7 @@ Deno.serve(async (req: Request) => {
     const body = await req.json().catch(() => null);
     const code = String(body?.code || "").trim();
     const state = String(body?.state || "").trim();
+    const clientRedirectUri = typeof body?.redirectUri === "string" ? body.redirectUri : undefined;
     if (!code || !state) {
       return new Response(JSON.stringify({ error: "Missing code or state." }), {
         status: 400,
@@ -53,7 +54,7 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    const exchange = await exchangeMetaOAuthCode(code);
+    const exchange = await exchangeMetaOAuthCode(code, clientRedirectUri);
     if (!exchange.accounts.length) {
       return new Response(JSON.stringify({ error: "No Meta ad accounts were returned for this login." }), {
         status: 400,

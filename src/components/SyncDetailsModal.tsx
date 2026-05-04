@@ -170,6 +170,16 @@ export const SyncDetailsModal = ({ integrationId, onClose }: SyncDetailsModalPro
                     Auto-updating every 5s
                   </div>
                 </div>
+              ) : progress === 100 ? (
+                <div className="h-full flex flex-col items-center justify-center text-center space-y-4 pt-12">
+                  <div className="w-16 h-16 rounded-3xl bg-slate-50 flex items-center justify-center">
+                    <Database className="text-slate-300" size={32} />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm font-bold text-slate-900">No performance data found</p>
+                    <p className="text-xs text-slate-400 max-w-[280px]">Your ad account was synced successfully, but we didn't find any campaigns with active spend or impressions in the last 90 days. Campaigns must have delivery to appear in this feed.</p>
+                  </div>
+                </div>
               ) : (
                 <div className="h-full flex flex-col items-center justify-center text-center space-y-4 pt-12">
                   <div className="w-16 h-16 rounded-3xl bg-slate-50 flex items-center justify-center">
