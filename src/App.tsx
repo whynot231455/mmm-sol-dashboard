@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Layout } from "./components/Layout";
+import { GlobalNotification } from "./components/GlobalNotification";
 import { useDataStore } from "./store/useDataStore";
 import { Loader2 } from "lucide-react";
 
@@ -94,7 +95,8 @@ function MainApp() {
 
   return (
     <Layout activePage={activePage}>
-      <div className="h-full animate-in fade-in duration-500">
+      <GlobalNotification />
+      <div className="h-full">
         {renderPage()}
       </div>
     </Layout>

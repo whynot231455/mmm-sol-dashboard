@@ -17,4 +17,4 @@ export const supabase = {
     on: () => ({ subscribe: () => {} }),
   }),
   removeChannel: () => {},
-} as any;
+} as any; // eslint-disable-line @typescript-eslint/no-explicit-any

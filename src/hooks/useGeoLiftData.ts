@@ -115,6 +115,14 @@ interface GeoLiftData {
   deleteTest: (id: string) => void;
 }
 
+const pseudoRandom = (seed: string) => {
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++) {
+    hash = seed.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return Math.abs(hash % 1000) / 1000;
+};
+
 export const useGeoLiftData = (): GeoLiftData => {
   const { rawData, mapping } = useDataStore();
 
@@ -133,9 +141,9 @@ export const useGeoLiftData = (): GeoLiftData => {
           name: country,
           country: country,
           group: 'unassigned',
-          population: Math.floor(Math.random() * 5000000) + 1000000,
+          population: Math.floor(pseudoRandom(country) * 5000000) + 1000000,
           spend: 0,
-          similarity: Math.random(),
+          similarity: pseudoRandom(country + 'sim'),
           avgRevenue: 0,
         });
       }
@@ -200,10 +208,11 @@ export const useGeoLiftData = (): GeoLiftData => {
     for (let i = 0; i < 30; i++) {
         const d = new Date('2024-04-01');
         d.setDate(d.getDate() + i);
+        const dateStr = d.toISOString().split('T')[0];
         counterfactualData.push({
-            date: d.toISOString().split('T')[0],
-            actual: 1000 + Math.random() * 200,
-            counterfactual: 900 + Math.random() * 150,
+            date: dateStr,
+            actual: 1000 + pseudoRandom(dateStr + 'act') * 200,
+            counterfactual: 900 + pseudoRandom(dateStr + 'cf') * 150,
             liftArea: 100
         });
     }
@@ -220,9 +229,9 @@ export const useGeoLiftData = (): GeoLiftData => {
       liftResult,
       channelComparison,
       counterfactualData,
-      createTest: (_test: Omit<GeoLiftTest, 'id'>) => {},
-      updateTest: (_id: string, _updates: Partial<GeoLiftTest>) => {},
-      deleteTest: (_id: string) => {},
+      createTest: () => {},
+      updateTest: () => {},
+      deleteTest: () => {},
     };
   }, [rawData, mapping]);
 

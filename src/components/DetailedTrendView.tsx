@@ -11,7 +11,7 @@ import {
   Legend,
   Brush,
 } from "recharts";
-import { ArrowLeft, RotateCw, X } from "lucide-react";
+import { ArrowLeft, X } from "lucide-react";
 import { formatSmartCurrency } from "../lib/formatters";
 import { FilterBar } from "./FilterBar";
 import { ZoomControl } from "./ZoomControl";
@@ -197,14 +197,34 @@ const defaultPalette = [
 /* ── Component ── */
 
 export const DetailedTrendView = ({ onBack }: DetailedTrendViewProps) => {
-  const { rawData, mapping, channelColors, setChannelColor } = useDataStore();
+  const { rawData, mapping, channelColors, setChannelColor, filters: persistedFilters } = useDataStore();
+
+  // Determine latest year and month from data
+  const { latestYear } = useMemo(() => {
+    if (!rawData.length || !mapping.date) return { latestYear: "2023" };
+    let maxYear = 0;
+    
+    rawData.forEach(row => {
+      const dateStr = row[mapping.date!] as string;
+      if (dateStr) {
+        const d = new Date(dateStr);
+        const y = d.getFullYear();
+        if (!isNaN(y) && y > maxYear) {
+          maxYear = y;
+        }
+      }
+    });
+    return { latestYear: maxYear > 0 ? maxYear.toString() : "2023" };
+  }, [rawData, mapping.date]);
 
   // Internal state for detailed filters
   const [selectedMonth, setSelectedMonth] = useState<string>("All Months");
-  const [selectedYear, setSelectedYear] = useState<string>("2025");
-  const [selectedCountry, setSelectedCountry] = useState<string>("Global");
+  const [selectedYear, setSelectedYear] = useState<string>(latestYear);
+  const [selectedCountry, setSelectedCountry] = useState<string>(
+    persistedFilters.country === "All" ? "Global" : persistedFilters.country
+  );
   const [selectedChannel, setSelectedChannel] =
-    useState<string>("All Channels");
+    useState<string>(persistedFilters.channel === "All" ? "All Channels" : persistedFilters.channel);
 
   // Palette picker state
   const [activeChannel, setActiveChannel] = useState<string | null>(null);
@@ -254,7 +274,7 @@ export const DetailedTrendView = ({ onBack }: DetailedTrendViewProps) => {
     }
 
     const months = new Set<string>(["All Months"]);
-    const years = new Set<string>();
+    const years = new Set<string>(["All"]);
     const countries = new Set<string>(["Global"]);
     const channels = new Set<string>(["All Channels"]);
 
@@ -276,11 +296,38 @@ export const DetailedTrendView = ({ onBack }: DetailedTrendViewProps) => {
 
     return {
       months: Array.from(months),
-      years: Array.from(years).sort(),
+      years: Array.from(years).sort((a, b) => {
+        if (a === "All") return -1;
+        if (b === "All") return 1;
+        return b.localeCompare(a); // Latest year first
+      }),
       countries: Array.from(countries).sort(),
       channels: Array.from(channels).sort(),
     };
   }, [rawData, mapping]);
+
+  // Sync state when global filters or data changes
+  useEffect(() => {
+    if (persistedFilters.country !== "All") {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setSelectedCountry(persistedFilters.country);
+    } else {
+      setSelectedCountry("Global");
+    }
+
+    if (persistedFilters.channel !== "All") {
+      setSelectedChannel(persistedFilters.channel);
+    } else {
+      setSelectedChannel("All Channels");
+    }
+  }, [persistedFilters.country, persistedFilters.channel]);
+
+  useEffect(() => {
+    if (latestYear && latestYear !== "2023" && selectedYear === "2023") {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setSelectedYear(latestYear);
+    }
+  }, [latestYear, selectedYear]);
 
   const sortedMonths = useMemo(() => {
     const months = [...filterOptions.months];
@@ -480,9 +527,6 @@ export const DetailedTrendView = ({ onBack }: DetailedTrendViewProps) => {
               onCountryChange={setSelectedCountry}
               onChannelChange={setSelectedChannel}
             />
-            <button className="p-3 text-slate-400 hover:text-slate-600 transition-colors">
-              <RotateCw size={18} />
-            </button>
           </div>
         </div>
       </div>
@@ -557,9 +601,9 @@ export const DetailedTrendView = ({ onBack }: DetailedTrendViewProps) => {
               />
               <Tooltip
                 formatter={(
-                  value: any,
-                  name: any,
-                ) => [formatSmartCurrency(Number(value ?? 0)), String(name ?? "")]}
+                  value: number | string | readonly (number | string)[] | undefined,
+                  name: string | number | undefined,
+                ) => [formatSmartCurrency(Number(Array.isArray(value) ? value[0] : (value ?? 0))), String(name ?? "")]}
                 contentStyle={{
                   backgroundColor: "#fff",
                   borderRadius: "12px",

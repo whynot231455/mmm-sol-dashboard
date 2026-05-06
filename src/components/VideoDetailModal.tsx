@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { 
   X, 
   Share2, 
@@ -7,7 +7,13 @@ import {
   Calendar, 
   Eye,
   Trash2,
-  ExternalLink
+  ExternalLink,
+  Play,
+  Pause,
+  Volume2,
+  Settings,
+  Maximize,
+  Captions
 } from "lucide-react";
 import { useDataStore, type Tutorial } from "../store/useDataStore";
 
@@ -17,55 +23,12 @@ interface Props {
   onDelete: (id: string) => void;
 }
 
-function extractYouTubeId(url: string) {
-  if (!url) return null;
-  const m =
-    url.match(/[?&]v=([\w-]+)/) ||
-    url.match(/youtu\.be\/([\w-]+)/) ||
-    url.match(/embed\/([\w-]+)/);
-  return m ? m[1] : null;
-}
-
 export const VideoDetailModal: React.FC<Props> = ({ tutorial, onClose, onDelete }) => {
   const { tutorials } = useDataStore();
-  const [description, setDescription] = useState<string | null>(tutorial.description || null);
-  const [views, setViews] = useState<string | null>(tutorial.views ? String(tutorial.views) : null);
-  const [loading, setLoading] = useState(false);
 
-  const videoId = tutorial.videoUrl ? extractYouTubeId(tutorial.videoUrl) : null;
-
-  // Filter out current tutorial for the sidebar
   const upcomingTutorials = tutorials
     .filter(t => t.id !== tutorial.id)
     .slice(0, 5);
-
-  useEffect(() => {
-    let mounted = true;
-    async function fetchData() {
-      if (!videoId) return;
-      setLoading(true);
-      const key = (import.meta.env as ImportMetaEnv).VITE_YOUTUBE_API_KEY;
-      try {
-        if (key) {
-          const url = `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics&id=${videoId}&key=${key}`;
-          const res = await fetch(url);
-          const data = await res.json();
-          if (!mounted) return;
-          const item = data.items && data.items[0];
-          if (item) {
-            setDescription(item.snippet.description || description);
-            setViews(item.statistics?.viewCount ? Intl.NumberFormat().format(item.statistics.viewCount) : null);
-          }
-        }
-      } catch {
-        // ignore errors
-      } finally {
-        if (mounted) setLoading(false);
-      }
-    }
-    fetchData();
-    return () => { mounted = false; };
-  }, [videoId, tutorial.videoUrl, description]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-50">
@@ -87,19 +50,68 @@ export const VideoDetailModal: React.FC<Props> = ({ tutorial, onClose, onDelete 
           {/* Main Content Area */}
           <div className="lg:col-span-8 space-y-8">
             {/* Video Player Container */}
-            <div className="rounded-[32px] overflow-hidden bg-slate-900 shadow-2xl aspect-video relative">
-              {videoId ? (
-                <iframe
-                  title={tutorial.title}
-                  src={`https://www.youtube.com/embed/${videoId}?autoplay=0&rel=0`}
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  className="absolute inset-0 w-full h-full border-0"
-                />
-              ) : (
-                <div className="absolute inset-0 flex items-center justify-center text-white">
-                  <p>No embeddable video URL</p>
+            <div className="rounded-[32px] overflow-hidden bg-slate-900 shadow-2xl aspect-video relative group cursor-pointer">
+              {/* Background Thumbnail */}
+              <img 
+                src={tutorial.thumbnail} 
+                className="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:scale-105 transition-transform duration-1000"
+                alt={tutorial.title}
+              />
+
+              {/* Gradient Overlay */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20" />
+
+              {/* Center Play Button */}
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-24 h-24 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center group-hover:scale-110 group-hover:bg-[#ED1B24]/20 group-hover:border-[#ED1B24]/40 transition-all duration-500">
+                  <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center shadow-2xl">
+                    <Play className="text-slate-900 ml-1" fill="currentColor" size={28} />
+                  </div>
                 </div>
-              )}
+              </div>
+
+              <div className="absolute top-0 inset-x-0 p-8 flex items-start justify-between bg-gradient-to-b from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                <div className="flex flex-col">
+                  <h3 className="text-white font-black text-sm">{tutorial.title}</h3>
+                  <p className="text-white/60 text-[10px] font-bold uppercase tracking-widest mt-0.5">Sol Academy</p>
+                </div>
+              </div>
+
+              {/* Bottom Control Bar */}
+              <div className="absolute bottom-0 inset-x-0 p-6 md:p-8 space-y-4 translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
+                {/* Progress Bar */}
+                <div className="relative h-1.5 w-full bg-white/20 rounded-full overflow-hidden group/bar">
+                  <div className="absolute left-0 top-0 h-full w-[45%] bg-[#ED1B24] relative">
+                    <div className="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-4 bg-[#ED1B24] rounded-full border-2 border-white scale-0 group-hover/bar:scale-100 transition-transform" />
+                  </div>
+                  <div className="absolute left-[45%] top-0 h-full w-[15%] bg-white/40" />
+                </div>
+
+                {/* Controls */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-6">
+                    <div className="flex items-center gap-4">
+                      <Play size={20} className="text-white fill-white" />
+                      <Pause size={20} className="text-white fill-white" />
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Volume2 size={20} className="text-white" />
+                      <div className="w-20 h-1 bg-white/30 rounded-full">
+                        <div className="w-2/3 h-full bg-white rounded-full" />
+                      </div>
+                    </div>
+                    <span className="text-white text-xs font-black tracking-wider">
+                      04:12 / {tutorial.duration || "12:45"}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-6">
+                    <Captions size={20} className="text-white opacity-60 hover:opacity-100 transition-opacity" />
+                    <Settings size={20} className="text-white opacity-60 hover:opacity-100 transition-opacity" />
+                    <Maximize size={20} className="text-white opacity-60 hover:opacity-100 transition-opacity" />
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* Video Info Section */}
@@ -135,12 +147,12 @@ export const VideoDetailModal: React.FC<Props> = ({ tutorial, onClose, onDelete 
                 </div>
                 <div className="flex items-center gap-2 text-slate-500 font-bold">
                   <Eye size={16} className="text-slate-400" />
-                  {loading ? "..." : (views || tutorial.views || "1.2k") + " views"}
+                  {(tutorial.views || "1.2k") + " views"}
                 </div>
               </div>
 
               <div className="pt-6 text-lg text-slate-600 leading-relaxed font-medium">
-                {description || tutorial.description}
+                {tutorial.description}
               </div>
 
               {/* Key Topics Section */}

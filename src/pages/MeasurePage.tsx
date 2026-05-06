@@ -15,15 +15,56 @@ import {
   Globe,
   Filter,
   Database,
+  Zap,
 } from "lucide-react";
 import { useDataStore } from "../store/useDataStore";
 import { formatSmartCurrency, formatPercent } from "../lib/formatters";
+import { IngestionFeedWidget } from "../components/IngestionFeedWidget";
+import { clsx, type ClassValue } from "clsx";
+import { twMerge } from "tailwind-merge";
+
+function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
+
+const DataSourceSwitcher = () => {
+  const { dataSourceView, setDataSourceView } = useDataStore();
+
+  return (
+    <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200">
+      <button
+        onClick={() => setDataSourceView('legacy')}
+        className={cn(
+          "px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all",
+          dataSourceView === 'legacy' 
+            ? "bg-white text-slate-900 shadow-sm border border-slate-200" 
+            : "text-slate-500 hover:text-slate-700"
+        )}
+      >
+        Legacy CSV
+      </button>
+      <button
+        onClick={() => setDataSourceView('integrated')}
+        className={cn(
+          "px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2",
+          dataSourceView === 'integrated' 
+            ? "bg-white text-brand-primary shadow-sm border border-slate-200" 
+            : "text-slate-500 hover:text-slate-700"
+        )}
+      >
+        <Zap size={12} className={dataSourceView === 'integrated' ? "text-brand-primary" : "text-slate-400"} />
+        Integrated
+      </button>
+    </div>
+  );
+};
 
 export const MeasurePage = () => {
   const {
     filters: persistedFilters,
     setFilter,
     setActivePage,
+    dataSourceView
   } = useDataStore();
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -67,15 +108,18 @@ export const MeasurePage = () => {
   ];
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500 pb-12">
+    <div className="space-y-8 pb-12">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
-            Measure Performance
-          </h1>
-          <p className="text-slate-500 mt-1">
-            Track your marketing mix effectiveness and ROI.
+          <div className="flex items-center gap-3 mb-2">
+            <h1 className="text-3xl font-black text-slate-900 tracking-tight">
+              Measure Performance
+            </h1>
+            <DataSourceSwitcher />
+          </div>
+          <p className="text-slate-500">
+            Track your {dataSourceView === 'integrated' ? 'live platform' : 'marketing mix'} effectiveness and ROI.
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -177,18 +221,15 @@ export const MeasurePage = () => {
       </div>
 
       {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <div className="lg:col-span-3 space-y-6">
           <TrendChart data={trend} onExpand={() => setIsExpanded(true)} />
+          <ChannelContribution data={channels} />
         </div>
-        <div>
+        <div className="space-y-6">
+          <IngestionFeedWidget />
           <IncrementalityChart data={incrementalityData} />
         </div>
-      </div>
-
-      {/* Breakdown Row */}
-      <div className="grid grid-cols-1">
-        <ChannelContribution data={channels} />
       </div>
     </div>
   );

@@ -15,6 +15,24 @@ interface ColumnMapping {
     [key: string]: string | undefined;
 }
 
+export type SyncStatus = 'IDLE' | 'SYNCING' | 'HEALTHY' | 'ERROR';
+
+export interface IntegrationMetadata {
+    platformId: string;
+    lastSyncAt: string | null;
+    syncStatus: SyncStatus;
+    ingestionProgress: number;
+    rowCount: number;
+}
+
+export interface AppNotification {
+    id: string;
+    type: 'success' | 'info' | 'warning';
+    message: string;
+    actionLabel?: string;
+    targetPage?: PageType;
+}
+
 interface Filters {
     country: string;
     channel: string;
@@ -99,8 +117,16 @@ interface DataState {
     tutorials: Tutorial[];
     documentation: DocumentationSection[];
     transformSettings: TransformSettings;
+    integratedData: Record<string, unknown>[];
+    integrations: Record<string, IntegrationMetadata>;
+    notification: AppNotification | null;
+    dataSourceView: 'legacy' | 'integrated';
 
     setData: (data: Record<string, unknown>[], headers: string[]) => void;
+    setIntegratedData: (data: Record<string, unknown>[]) => void;
+    updateIntegration: (platformId: string, metadata: Partial<IntegrationMetadata>) => void;
+    setNotification: (notification: AppNotification | null) => void;
+    setDataSourceView: (view: 'legacy' | 'integrated') => void;
     setMapping: (mapping: ColumnMapping) => void;
     setFilter: (key: keyof Filters, value: string) => void;
     setActivePage: (page: PageType) => void;
@@ -161,18 +187,109 @@ const DEMO_MAPPING: ColumnMapping = {
 const DEMO_TUTORIALS: Tutorial[] = [
     {
         id: '1',
-        title: 'Getting Started with MMM',
-        description: 'Learn the basics of Marketing Mix Modeling',
-        videoUrl: 'https://example.com/video1',
-        category: 'Getting Started',
-        duration: 300,
-        views: 1500,
-        thumbnail: 'https://example.com/thumb1.jpg',
+        title: 'Introduction to MMM Fundamentals',
+        description: 'Understand the core mathematical concepts behind modern Marketing Mix Modeling.',
+        videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        category: 'Module 1: Foundations',
+        duration: 450,
+        views: 2400,
+        thumbnail: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=800',
         status: 'Completed',
         progress: 100,
         split: 1,
     },
+    {
+        id: '2',
+        title: 'Data Preparation & Ingestion',
+        description: 'Learn how to clean and structure your marketing data for accurate model training.',
+        videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        category: 'Module 1: Foundations',
+        duration: 820,
+        views: 1800,
+        thumbnail: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&q=80&w=800',
+        status: 'Completed',
+        progress: 100,
+        split: 1,
+    },
+    {
+        id: '3',
+        title: 'Channel-Level Saturation Curves',
+        description: 'Master the art of calculating diminishing returns for each ad platform.',
+        videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        category: 'Module 2: Advanced Modeling',
+        duration: 1200,
+        views: 1200,
+        thumbnail: 'https://images.unsplash.com/photo-1543286386-713bdd548da4?auto=format&fit=crop&q=80&w=800',
+        status: 'In Progress',
+        progress: 45,
+        split: 1,
+    },
+    {
+        id: '4',
+        title: 'Bayesian Inference in MMM',
+        description: 'Deep dive into probability theory and how it stabilizes model coefficients.',
+        videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        category: 'Module 2: Advanced Modeling',
+        duration: 1560,
+        views: 950,
+        thumbnail: '/bayesian_inference_thumbnail.png',
+        status: 'Not Started',
+        progress: 0,
+        split: 1,
+    },
+    {
+        id: '5',
+        title: 'Budget Optimization Strategies',
+        description: 'Using your model outputs to reallocate budget across channels for maximum ROI.',
+        videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        category: 'Module 3: Strategic Planning',
+        duration: 940,
+        views: 3100,
+        thumbnail: 'https://images.unsplash.com/photo-1553729459-efe14ef6055d?auto=format&fit=crop&q=80&w=800',
+        status: 'Not Started',
+        progress: 0,
+        split: 1,
+    },
+    {
+        id: '6',
+        title: 'Incrementality & Lift Testing',
+        description: 'Bridge the gap between observation and experimentation with lift tests.',
+        videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        category: 'Module 3: Strategic Planning',
+        duration: 1100,
+        views: 1500,
+        thumbnail: 'https://images.unsplash.com/photo-1551434678-e076c223a692?auto=format&fit=crop&q=80&w=800',
+        status: 'Not Started',
+        progress: 0,
+        split: 1,
+    },
 ];
+
+const DEMO_INTEGRATED_DATA: Record<string, unknown>[] = (() => {
+  const platforms = ['Meta Ads', 'Google Ads', 'Shopify'];
+  const countries = ['USA', 'UK', 'Germany'];
+  const data: Record<string, unknown>[] = [];
+  const startDate = new Date('2023-01-01');
+  for (let i = 0; i < 365; i++) {
+    const d = new Date(startDate);
+    d.setDate(d.getDate() + i);
+    const dateStr = d.toISOString().split('T')[0];
+    platforms.forEach((p) => {
+      countries.forEach((ct) => {
+        const spend = Math.round(Math.random() * 2000 + 1000);
+        const revenue = Math.round(spend * (4.0 + Math.random() * 3.0));
+        data.push({
+          Date: dateStr,
+          Channel: p,
+          Country: ct,
+          Spend: spend,
+          Revenue: revenue
+        });
+      });
+    });
+  }
+  return data;
+})();
 
 const DEMO_DOCUMENTATION: DocumentationSection[] = [
     {
@@ -252,6 +369,15 @@ export const useDataStore = create<DataState>()((set) => ({
     tutorials: DEMO_TUTORIALS,
     documentation: DEMO_DOCUMENTATION,
     transformSettings: DEMO_TRANSFORM_SETTINGS,
+    integratedData: DEMO_INTEGRATED_DATA,
+    integrations: {
+        google_ads: { platformId: 'google_ads', lastSyncAt: '2024-05-01T10:00:00Z', syncStatus: 'HEALTHY', ingestionProgress: 100, rowCount: 1240 },
+        meta_ads: { platformId: 'meta_ads', lastSyncAt: '2024-05-02T14:30:00Z', syncStatus: 'HEALTHY', ingestionProgress: 100, rowCount: 850 },
+        shopify: { platformId: 'shopify', lastSyncAt: '2024-05-02T15:00:00Z', syncStatus: 'HEALTHY', ingestionProgress: 100, rowCount: 3400 },
+        tiktok_ads: { platformId: 'tiktok_ads', lastSyncAt: null, syncStatus: 'IDLE', ingestionProgress: 0, rowCount: 0 },
+    },
+    notification: null,
+    dataSourceView: 'legacy',
 
     setData: (data, headers) => set((state) => {
         const newMapping = { ...state.mapping };
@@ -267,6 +393,19 @@ export const useDataStore = create<DataState>()((set) => ({
             isLoaded: data.length > 0
         };
     }),
+
+    setIntegratedData: (data) => set({ integratedData: data }),
+
+    updateIntegration: (platformId, metadata) => set((state) => ({
+        integrations: {
+            ...state.integrations,
+            [platformId]: { ...state.integrations[platformId], ...metadata }
+        }
+    })),
+
+    setNotification: (notification) => set({ notification }),
+
+    setDataSourceView: (view) => set({ dataSourceView: view }),
 
     setMapping: (mapping) => set({ mapping }),
 

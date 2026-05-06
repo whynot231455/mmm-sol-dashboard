@@ -8,18 +8,20 @@ interface MeasureDataFilters {
 }
 
 export const useMeasureData = (filters?: MeasureDataFilters, options?: { enabled?: boolean }) => {
-    const { rawData, mapping } = useDataStore();
+    const { rawData, integratedData, mapping, dataSourceView } = useDataStore();
     const enabled = options?.enabled ?? true;
+
+    const dataToProcess = dataSourceView === 'integrated' ? integratedData : rawData;
 
     // Extract Unique Values for Dropdowns - only compute when rawData or mapping changes
     const availableFilters = useMemo(() => {
-        if (!enabled || !rawData.length || !mapping.country || !mapping.channel) {
+        if (!enabled || !dataToProcess.length || !mapping.country || !mapping.channel) {
             return { countries: ['All'], channels: ['All'] };
         }
         const countries = new Set<string>();
         const channels = new Set<string>();
 
-        rawData.forEach(row => {
+        dataToProcess.forEach(row => {
             const country = row[mapping.country!] as string | undefined;
             const channel = row[mapping.channel!] as string | undefined;
             if (country) countries.add(country);
@@ -30,14 +32,14 @@ export const useMeasureData = (filters?: MeasureDataFilters, options?: { enabled
             countries: ['All', ...Array.from(countries).sort()],
             channels: ['All', ...Array.from(channels).sort()]
         };
-    }, [rawData, mapping.country, mapping.channel, enabled]);
+    }, [dataToProcess, mapping.country, mapping.channel, enabled]);
 
     const metrics = useMemo(() => {
-        if (!enabled || !rawData.length || !mapping.revenue || !mapping.spend || !mapping.date) {
+        if (!enabled || !dataToProcess.length || !mapping.revenue || !mapping.spend || !mapping.date) {
             return null;
         }
 
-        let filteredData = rawData;
+        let filteredData = dataToProcess;
 
         // Apply Filters
         const activeCountry = filters?.country && availableFilters.countries.includes(filters.country) ? filters.country : 'All';
@@ -58,7 +60,7 @@ export const useMeasureData = (filters?: MeasureDataFilters, options?: { enabled
             
             // Find the latest date in the dataset to calculate relative ranges
             let latestTime = 0;
-            rawData.forEach(row => {
+            dataToProcess.forEach(row => {
                 const dateVal = row[mapping.date!];
                 if (dateVal) {
                     const time = new Date(dateVal as string).getTime();
@@ -156,7 +158,7 @@ export const useMeasureData = (filters?: MeasureDataFilters, options?: { enabled
             channels: Object.values(channelData).sort((a, b) => b.revenue - a.revenue),
             filters: availableFilters
         };
-    }, [rawData, mapping, filters, availableFilters, enabled]);
+    }, [dataToProcess, mapping, filters, availableFilters, enabled]);
 
     return metrics;
 };

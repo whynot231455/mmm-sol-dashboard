@@ -64,7 +64,7 @@ const IntegrationCard = ({ name, type, icon, status, onConnect }: {
 };
 
 export const ConnectPage = () => {
-  const { rawData, mapping } = useDataStore();
+  const { rawData, mapping, setNotification, updateIntegration } = useDataStore();
   const [activeTab, setActiveTab] = useState('All Sources');
   const [searchQuery, setSearchQuery] = useState('');
   const [integrationStatuses, setIntegrationStatuses] = useState<Record<string, IntegrationStatus>>({
@@ -96,6 +96,7 @@ export const ConnectPage = () => {
   ], []);
 
   const [selectedPlatform, setSelectedPlatform] = useState<{ id: string; name: string; icon: React.ReactNode } | null>(null);
+  const [wizardMode, setWizardMode] = useState<'connect' | 'manage'>('connect');
 
   const mergedIntegrations = useMemo(() => {
     return integrationDefinitions.map(def => {
@@ -113,8 +114,9 @@ export const ConnectPage = () => {
     });
   }, [integrationDefinitions, integrationStatuses, csvConnectedChannels, activeTab, searchQuery]);
 
-  const handleConnect = (platform: any) => {
-    if (integrationStatuses[platform.platformId] === 'connected') return;
+  const handleConnect = (platform: { platformId: string; name: string; icon: React.ReactNode }) => {
+    const isConnected = integrationStatuses[platform.platformId] === 'connected';
+    setWizardMode(isConnected ? 'manage' : 'connect');
     setSelectedPlatform({
       id: platform.platformId,
       name: platform.name,
@@ -123,14 +125,49 @@ export const ConnectPage = () => {
   };
 
   const handleConnectionSuccess = (platformId: string) => {
+    // 1. Update the connection status to 'syncing' initially to simulate real ingestion
     setIntegrationStatuses(prev => ({
       ...prev,
-      [platformId]: 'connected'
+      [platformId]: 'syncing'
     }));
+
+    // 2. Trigger a global notification
+    const platform = integrationDefinitions.find(d => d.platformId === platformId);
+    setNotification({
+      id: Date.now().toString(),
+      type: 'success',
+      message: `Successfully connected to ${platform?.name || platformId}! Initial data ingestion started.`,
+      actionLabel: 'View Performance',
+      targetPage: 'measure'
+    });
+
+    // 3. Simulate ingestion completion after 8 seconds
+    setTimeout(() => {
+      setIntegrationStatuses(prev => ({
+        ...prev,
+        [platformId]: 'connected'
+      }));
+      
+      // Update store with realistic row counts for integrated data
+      updateIntegration(platformId, {
+        syncStatus: 'HEALTHY',
+        lastSyncAt: new Date().toISOString(),
+        rowCount: Math.floor(Math.random() * 5000) + 1000,
+        ingestionProgress: 100
+      });
+    }, 8000);
+  };
+
+  const handleDisconnect = (platformId: string) => {
+    setIntegrationStatuses(prev => {
+      const next = { ...prev };
+      delete next[platformId];
+      return next;
+    });
   };
 
   return (
-    <div className="px-8 pt-8 space-y-8 animate-in fade-in duration-500 pb-12">
+    <div className="px-8 pt-8 space-y-8 pb-12">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="space-y-2">
           <nav className="flex items-center gap-2 text-xs font-semibold text-slate-400 uppercase tracking-widest">
@@ -198,8 +235,10 @@ export const ConnectPage = () => {
 
       <ConnectionWizard 
         platform={selectedPlatform}
+        mode={wizardMode}
         onClose={() => setSelectedPlatform(null)}
         onSuccess={handleConnectionSuccess}
+        onDisconnect={handleDisconnect}
       />
     </div>
   );

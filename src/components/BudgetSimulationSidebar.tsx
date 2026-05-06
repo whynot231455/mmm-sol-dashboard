@@ -36,6 +36,7 @@ export const BudgetSimulationSidebar = ({
 
   // Sync local state when prop changes (e.g. from parent reset or initialization)
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLocalBudget(totalBudget);
   }, [totalBudget]);
 

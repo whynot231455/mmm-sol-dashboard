@@ -95,6 +95,7 @@ export const useTrainConfig = (): TrainConfigData => {
       const sortedDates = [...new Set(dates)].sort();
       const availableChannels = Array.from(channelsSet);
       
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setInternalConfig(prev => ({
         ...prev,
         trainingWindow: sortedDates.length > 0 ? {
@@ -114,8 +115,8 @@ export const useTrainConfig = (): TrainConfigData => {
     let headers: string[] = [];
     let dateConstraints: DateConstraint = { min: '', max: '' };
     let availableChannels: string[] = [];
-    let organicBaselineOptions: string[] = ['Base', 'Trend', 'Seasonality'];
-    let externalFactorOptions: string[] = ['Holiday', 'Events', 'Competitor'];
+    const organicBaselineOptions: string[] = ['Base', 'Trend', 'Seasonality'];
+    const externalFactorOptions: string[] = ['Holiday', 'Events', 'Competitor'];
     let metrics: TrainMetrics = {
         r2: 0,
         rmse: 0,

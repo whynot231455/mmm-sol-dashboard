@@ -60,7 +60,7 @@ export const ReallocationTable = ({ data }: ReallocationTableProps) => {
                       </div>
                       <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
                          <div 
-                           className={`h-full rounded-full transition-all duration-500 ${item.impact.includes('High') ? 'bg-green-500' : item.impact.includes('Med') ? 'bg-brand-third' : 'bg-slate-300'}`}
+                           className={`h-full rounded-full ${item.impact.includes('High') ? 'bg-green-500' : item.impact.includes('Med') ? 'bg-brand-third' : 'bg-slate-300'}`}
                            style={{ width: item.impact.includes('High') ? '85%' : item.impact.includes('Med') ? '50%' : '20%' }}
                         />
                       </div>

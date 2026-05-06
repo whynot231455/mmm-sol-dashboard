@@ -156,8 +156,8 @@ export const GeoLiftResults = ({
                   border: "1px solid #e2e8f0",
                   fontSize: "13px",
                 }}
-                formatter={(value: any, name: any) => [
-                  `$${(Number(value ?? 0) / 1000).toFixed(1)}K`,
+                formatter={(value: number | string | readonly (number | string)[] | undefined, name: string | number | undefined) => [
+                  `$${(Number(Array.isArray(value) ? value[0] : (value ?? 0)) / 1000).toFixed(1)}K`,
                   String(name ?? ""),
                 ]}
                 labelFormatter={(label: unknown) => {
@@ -263,8 +263,8 @@ export const GeoLiftResults = ({
                   border: "1px solid #e2e8f0",
                   fontSize: "13px",
                 }}
-                formatter={(value: any, name: any) => [
-                  `${value ?? 0}x`,
+                formatter={(value: number | string | readonly (number | string)[] | undefined, name: string | number | undefined) => [
+                  `${Number(Array.isArray(value) ? value[0] : (value ?? 0)).toFixed(2)}x`,
                   String(name ?? ""),
                 ]}
               />

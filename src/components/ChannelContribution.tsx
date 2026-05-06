@@ -6,7 +6,7 @@ import {
   Instagram, 
   Search, 
   Music2, 
-  Infinity, 
+  Infinity as InfinityIcon, 
   Globe 
 } from "lucide-react";
 
@@ -16,7 +16,7 @@ const getChannelIcon = (channel: string) => {
   if (c.includes('google') || c.includes('search')) return <Search size={18} className="text-[#4285F4]" />;
   if (c.includes('instagram')) return <Instagram size={18} className="text-[#E4405F]" />;
   if (c.includes('tiktok')) return <Music2 size={18} className="text-[#000000]" />;
-  if (c.includes('meta') || c.includes('facebook')) return <Infinity size={18} className="text-[#1877F2]" />;
+  if (c.includes('meta') || c.includes('facebook')) return <InfinityIcon size={18} className="text-[#1877F2]" />;
   return <Globe size={18} className="text-slate-400" />;
 };
 

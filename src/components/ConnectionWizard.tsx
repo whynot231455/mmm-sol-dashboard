@@ -1,5 +1,11 @@
 import { useState, useEffect } from 'react';
-import { X, CheckCircle2, ExternalLink, ArrowRight, Info, Database, Zap } from 'lucide-react';
+import { X, CheckCircle2, ExternalLink, ArrowRight, Info, Database,  Zap,
+  Settings,
+  ShieldCheck,
+  RefreshCw,
+  Trash2,
+  Lock,
+} from 'lucide-react';
 
 interface ConnectionWizardProps {
   platform: {
@@ -7,14 +13,16 @@ interface ConnectionWizardProps {
     name: string;
     icon: React.ReactNode;
   } | null;
+  mode?: 'connect' | 'manage';
   onClose: () => void;
   onSuccess: (platformId: string) => void;
+  onDisconnect: (platformId: string) => void;
 }
 
-type WizardStep = 'guide' | 'input' | 'connecting' | 'success';
+type WizardStep = 'guide' | 'input' | 'connecting' | 'success' | 'manage';
 
-export const ConnectionWizard = ({ platform, onClose, onSuccess }: ConnectionWizardProps) => {
-  const [step, setStep] = useState<WizardStep>('guide');
+export const ConnectionWizard = ({ platform, mode = 'connect', onClose, onSuccess, onDisconnect }: ConnectionWizardProps) => {
+  const [step, setStep] = useState<WizardStep>(mode === 'manage' ? 'manage' : 'guide');
   const [accountId, setAccountId] = useState('');
   const [ingestionProgress, setIngestionProgress] = useState(0);
 
@@ -45,11 +53,20 @@ export const ConnectionWizard = ({ platform, onClose, onSuccess }: ConnectionWiz
   // Reset state when modal is closed (platform becomes null)
   useEffect(() => {
     if (!platform) {
-      setStep('guide');
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setStep(mode === 'manage' ? 'manage' : 'guide');
       setAccountId('');
       setIngestionProgress(0);
     }
-  }, [platform]);
+  }, [platform, mode]);
+
+  // Ensure step updates if mode changes while platform is active
+  useEffect(() => {
+    if (platform) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setStep(mode === 'manage' ? 'manage' : 'guide');
+    }
+  }, [mode, platform]);
 
   if (!platform) return null;
 
@@ -58,7 +75,17 @@ export const ConnectionWizard = ({ platform, onClose, onSuccess }: ConnectionWiz
     setStep('connecting');
   };
 
-  const platformGuides: Record<string, { title: string; steps: string[]; image?: string }> = {
+  const handleSync = () => {
+    setIngestionProgress(0);
+    setStep('connecting');
+  };
+
+  const handleDisconnectAction = () => {
+    onDisconnect(platform.id);
+    onClose();
+  };
+
+  const platformGuides: Record<string, { title: string; steps: string[] }> = {
     google_ads: {
       title: "Find your Google Ads Customer ID",
       steps: [
@@ -67,7 +94,6 @@ export const ConnectionWizard = ({ platform, onClose, onSuccess }: ConnectionWiz
         "Your Customer ID is the 10-digit number (e.g., 123-456-7890).",
         "Copy and paste it into the next step."
       ],
-      image: "/google_ads_guide_mockup.png"
     },
     meta_ads: {
       title: "Find your Meta Ads Account ID",
@@ -77,7 +103,6 @@ export const ConnectionWizard = ({ platform, onClose, onSuccess }: ConnectionWiz
         "The ID is shown next to your account name.",
         "Alternatively, find it in 'Account Settings' under 'Ad Account ID'."
       ],
-      image: "/meta_ads_guide_mockup.png"
     },
     default: {
       title: "How to connect",
@@ -110,8 +135,11 @@ export const ConnectionWizard = ({ platform, onClose, onSuccess }: ConnectionWiz
               {platform.icon}
             </div>
             <div>
-              <h2 className="text-lg font-black text-slate-900 tracking-tight">Connect {platform.name}</h2>
+              <h2 className="text-lg font-black text-slate-900 tracking-tight">
+                {step === 'manage' ? `Manage ${platform.name}` : `Connect ${platform.name}`}
+              </h2>
               <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+                {step === 'manage' && "Active Integration"}
                 {step === 'guide' && "Step 1: Preparation"}
                 {step === 'input' && "Step 2: Authenticate"}
                 {step === 'connecting' && "Verification in progress"}
@@ -119,49 +147,108 @@ export const ConnectionWizard = ({ platform, onClose, onSuccess }: ConnectionWiz
               </p>
             </div>
           </div>
-          <button 
-            onClick={onClose}
-            className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-full transition-all"
-          >
-            <X size={20} />
-          </button>
+          <div className="flex items-center gap-2">
+            {step === 'manage' && (
+              <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 bg-green-50 text-green-600 rounded-full text-[10px] font-black uppercase tracking-wider border border-green-100">
+                <ShieldCheck size={12} />
+                Connected
+              </div>
+            )}
+            <button 
+              onClick={onClose}
+              className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-full transition-all"
+            >
+              <X size={20} />
+            </button>
+          </div>
         </div>
 
         {/* Content */}
         <div className="p-8">
-          {step === 'guide' && (
-            <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-300">
-              <div className="flex flex-col lg:flex-row gap-8">
-                <div className="flex-1 space-y-4">
-                  <h3 className="text-xl font-bold text-slate-900 leading-tight">{guide.title}</h3>
-                  <div className="space-y-3">
-                    {guide.steps.map((s, i) => (
-                      <div key={i} className="flex gap-3">
-                        <div className="flex-shrink-0 w-6 h-6 rounded-full bg-brand-primary/10 text-brand-primary flex items-center justify-center text-xs font-black">
-                          {i + 1}
-                        </div>
-                        <p className="text-sm text-slate-600 font-medium leading-relaxed">{s}</p>
-                      </div>
-                    ))}
+          {step === 'manage' && (
+            <div className="space-y-8">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-1">
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Account ID</span>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-bold text-slate-900">742-819-2041</span>
+                      <Lock size={14} className="text-slate-300" />
+                    </div>
                   </div>
-                  <div className="pt-4">
-                    <a 
-                      href="#" 
-                      className="inline-flex items-center gap-2 text-xs font-bold text-brand-primary hover:underline"
-                    >
-                      Visit {platform.name} Dashboard <ExternalLink size={12} />
-                    </a>
+                  <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-1">
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Client Secret</span>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-bold text-slate-900">••••••••••••••••</span>
+                      <Lock size={14} className="text-slate-300" />
+                    </div>
                   </div>
                 </div>
-                {guide.image && (
-                  <div className="lg:w-1/2 rounded-2xl border border-slate-200 overflow-hidden shadow-inner bg-slate-50 group">
-                     <img 
-                       src={guide.image} 
-                       alt="Guide Illustration" 
-                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                     />
+
+                <div className="p-6 bg-brand-primary/5 rounded-[2rem] border border-brand-primary/10 space-y-4">
+                  <div className="flex items-center gap-2 text-brand-primary">
+                    <Info size={18} />
+                    <h4 className="text-xs font-black uppercase tracking-wider">Management Help</h4>
                   </div>
-                )}
+                  <p className="text-xs text-slate-600 leading-relaxed font-medium">
+                    To rotate your client secrets or change permissions, please visit the <strong>{platform.name} Developer Console</strong>. Updates made there will automatically sync here during the next handshake.
+                  </p>
+                  <button className="text-[10px] font-black text-brand-primary hover:underline uppercase tracking-widest flex items-center gap-1">
+                    View Documentation <ExternalLink size={10} />
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-3">
+                <button 
+                  onClick={() => setStep('guide')}
+                  className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black shadow-xl shadow-slate-900/10 flex items-center justify-center gap-3 hover:bg-slate-800 transition-all active:scale-95"
+                >
+                  <Settings size={18} />
+                  Reconfigure Integration
+                </button>
+                <div className="grid grid-cols-2 gap-3">
+                  <button 
+                    onClick={handleSync}
+                    className="py-3 bg-white border border-slate-200 rounded-xl text-xs font-black text-slate-600 hover:bg-slate-50 flex items-center justify-center gap-2 transition-all"
+                  >
+                    <RefreshCw size={14} />
+                    Sync Data
+                  </button>
+                  <button 
+                    onClick={handleDisconnectAction}
+                    className="py-3 bg-white border border-red-100 rounded-xl text-xs font-black text-red-500 hover:bg-red-50 flex items-center justify-center gap-2 transition-all"
+                  >
+                    <Trash2 size={14} />
+                    Disconnect
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {step === 'guide' && (
+            <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-300">
+              <div className="space-y-4">
+                <h3 className="text-xl font-bold text-slate-900 leading-tight">{guide.title}</h3>
+                <div className="space-y-3">
+                  {guide.steps.map((s, i) => (
+                    <div key={i} className="flex gap-3">
+                      <div className="flex-shrink-0 w-6 h-6 rounded-full bg-brand-primary/10 text-brand-primary flex items-center justify-center text-xs font-black">
+                        {i + 1}
+                      </div>
+                      <p className="text-sm text-slate-600 font-medium leading-relaxed">{s}</p>
+                    </div>
+                  ))}
+                </div>
+                <div className="pt-4">
+                  <a 
+                    href="#" 
+                    className="inline-flex items-center gap-2 text-xs font-bold text-brand-primary hover:underline"
+                  >
+                    Visit {platform.name} Dashboard <ExternalLink size={12} />
+                  </a>
+                </div>
               </div>
               
               <div className="pt-6 flex justify-end">

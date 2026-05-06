@@ -36,7 +36,8 @@ export interface LiftStudy {
   enabled?: boolean;
 }
 
-export interface ActiveStudy extends LiftStudy {}
+// Use LiftStudy directly or add unique fields to ActiveStudy if needed
+export type ActiveStudy = LiftStudy;
 
 export interface TuningParams {
   saturation: number;
@@ -67,6 +68,14 @@ export interface CalibrateData {
   setTuningParams: (params: Partial<TuningParams>) => void;
 }
 
+const pseudoRandom = (seed: string) => {
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++) {
+    hash = seed.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return Math.abs(hash % 1000) / 1000;
+};
+
 export const useCalibrateData = (): CalibrateData | null => {
   const { rawData, mapping, isLoaded } = useDataStore();
 
@@ -94,9 +103,9 @@ export const useCalibrateData = (): CalibrateData | null => {
 
     const channelMetrics: CalibrationMetric[] = channelArray.map(channel => ({
       name: channel,
-      original: Math.random() * 2 + 0.5,
-      calibrated: Math.random() * 2 + 0.5,
-      change: (Math.random() - 0.5) * 0.4,
+      original: pseudoRandom(channel + 'orig') * 2 + 0.5,
+      calibrated: pseudoRandom(channel + 'cal') * 2 + 0.5,
+      change: (pseudoRandom(channel + 'chg') - 0.5) * 0.4,
     }));
 
     const metrics: CalibrationMetrics = {
@@ -109,19 +118,19 @@ export const useCalibrateData = (): CalibrateData | null => {
 
     const impactData: { channel: string; baseline: number; calibrated: number; actuals: number }[] = channelArray.map(channel => ({
       channel,
-      baseline: Math.random() * 10000 + 5000,
-      calibrated: Math.random() * 10000 + 5000,
-      actuals: Math.random() * 10000 + 5000,
+      baseline: pseudoRandom(channel + 'base') * 10000 + 5000,
+      calibrated: pseudoRandom(channel + 'cal2') * 10000 + 5000,
+      actuals: pseudoRandom(channel + 'act') * 10000 + 5000,
     }));
 
     const coefficientChanges: CoefficientChange[] = channelArray.map(channel => ({
       channel,
-      original: Math.random() * 0.5 + 0.1,
-      calibrated: Math.random() * 0.5 + 0.1,
-      change: (Math.random() - 0.5) * 0.2,
-      baselineCoeff: Math.random() * 0.5 + 0.1,
-      calibratedCoeff: Math.random() * 0.5 + 0.1,
-      impact: Math.random() * 5000,
+      original: pseudoRandom(channel + 'coef1') * 0.5 + 0.1,
+      calibrated: pseudoRandom(channel + 'coef2') * 0.5 + 0.1,
+      change: (pseudoRandom(channel + 'coef3') - 0.5) * 0.2,
+      baselineCoeff: pseudoRandom(channel + 'coef4') * 0.5 + 0.1,
+      calibratedCoeff: pseudoRandom(channel + 'coef5') * 0.5 + 0.1,
+      impact: pseudoRandom(channel + 'coef6') * 5000,
     }));
 
     const activeStudies: ActiveStudy[] = [
@@ -139,7 +148,7 @@ export const useCalibrateData = (): CalibrateData | null => {
       },
     ];
 
-    const toggleStudy = (_id: string) => {};
+    const toggleStudy = () => {};
 
     const tuningParams: TuningParams = {
       ...tuningParamsState,

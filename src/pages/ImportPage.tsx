@@ -129,7 +129,7 @@ export const ImportPage = () => {
   const previewData = useMemo(() => rawData.slice(0, 5), [rawData]);
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500 pb-12">
+    <div className="space-y-8 pb-12">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>

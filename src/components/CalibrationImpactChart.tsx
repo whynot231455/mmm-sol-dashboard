@@ -102,8 +102,8 @@ export const CalibrationImpactChart = ({
               textTransform: "uppercase",
               letterSpacing: "0.05em",
             }}
-            formatter={(value: any, name: any) => [
-              `$${(Number(value || 0)).toLocaleString()}`,
+            formatter={(value: number | string | readonly (number | string)[] | undefined, name: string | number | undefined) => [
+              `$${(Number(Array.isArray(value) ? value[0] : (value || 0))).toLocaleString()}`,
               String(name ?? '').charAt(0).toUpperCase() + String(name ?? '').slice(1)
             ]}
           />

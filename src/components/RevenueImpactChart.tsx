@@ -77,8 +77,8 @@ export const RevenueImpactChart = ({ data }: RevenueImpactChartProps) => {
               }}
               itemStyle={{ color: "#1e293b", fontWeight: 600, fontSize: '12px' }}
               labelStyle={{ color: "#94a3b8", fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', marginBottom: '4px' }}
-              formatter={(val: any, name: any) => [
-                formatSmartCurrency(Number(val ?? 0)),
+              formatter={(val: number | string | readonly (number | string)[] | undefined, name: string | number | undefined) => [
+                formatSmartCurrency(Number(Array.isArray(val) ? val[0] : (val ?? 0))),
                 String(name ?? ""),
               ]}
             />
@@ -88,12 +88,14 @@ export const RevenueImpactChart = ({ data }: RevenueImpactChartProps) => {
               fill="#f1f5f9"
               radius={[4, 4, 0, 0]}
               barSize={40}
+              isAnimationActive={false}
             />
             <Bar 
               dataKey="optimized" 
               name="Optimized Revenue"
               radius={[4, 4, 0, 0]} 
               barSize={40}
+              isAnimationActive={false}
             >
               {data.map((entry, index) => (
                 <Cell

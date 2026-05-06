@@ -93,7 +93,7 @@ export const OptimizePage = () => {
   };
 
   return (
-    <div className="px-8 pt-8 space-y-8 animate-in fade-in duration-500 pb-12">
+    <div className="px-8 pt-8 space-y-8 pb-12">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
