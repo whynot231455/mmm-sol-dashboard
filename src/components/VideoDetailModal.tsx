@@ -29,7 +29,7 @@ function extractYouTubeId(url: string) {
 export const VideoDetailModal: React.FC<Props> = ({ tutorial, onClose, onDelete }) => {
   const { tutorials } = useDataStore();
   const [description, setDescription] = useState<string | null>(tutorial.description || null);
-  const [views, setViews] = useState<string | null>(tutorial.views || null);
+  const [views, setViews] = useState<string | null>(tutorial.views ? String(tutorial.views) : null);
   const [loading, setLoading] = useState(false);
 
   const videoId = tutorial.videoUrl ? extractYouTubeId(tutorial.videoUrl) : null;

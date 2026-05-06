@@ -118,13 +118,15 @@ export const TransformPage = () => {
         if (!rawData || rawData.length === 0) return [];
         
         const source = transformSettings?.dataSource || 'All Sources';
-        const { start, end } = transformSettings?.dateRange || {};
+        const start = transformSettings?.dateRange?.start;
+        const end = transformSettings?.dateRange?.end;
         const channelKey = mapping?.channel || 'Channel';
         const dateKey = mapping?.date || 'Date';
         
         return rawData.filter(row => {
-            const matchesSource = source === 'All Sources' || String(row[channelKey]) === source;
-            const rowDate = String(row[dateKey]);
+            const rowSource = String(row[channelKey] || '');
+            const matchesSource = source === 'All Sources' || rowSource === source;
+            const rowDate = String(row[dateKey] || '');
             const matchesDate = (!start || rowDate >= start) && (!end || rowDate <= end);
             return matchesSource && matchesDate;
         });
@@ -138,34 +140,41 @@ export const TransformPage = () => {
         { id: 'final-input', label: 'FINAL INPUT', icon: <LogOut size={20} /> },
     ], []);
 
-    // Chart data
+    // Chart data - ensuring we have 50-100 points for a good look
     const chartData = useMemo(() => {
-        if (!filteredData || filteredData.length === 0) return [];
-        const metric = mapping?.[transformSettings?.primaryMetric] || transformSettings?.primaryMetric || 'spend';
+        const sourceData = filteredData.length > 0 ? filteredData : rawData;
+        if (!sourceData || sourceData.length === 0) return [];
+        
+        const metricKey = transformSettings?.primaryMetric || 'spend';
+        const metric = mapping?.[metricKey] || (metricKey.charAt(0).toUpperCase() + metricKey.slice(1)) || 'Spend';
         const dateKey = mapping?.date || 'Date';
-        return filteredData.slice(0, 100).map((row, idx) => ({
+        
+        return sourceData.slice(0, 100).map((row, idx) => ({
             name: row[dateKey] || `Point ${idx}`,
             value: Number(row[metric]) || 0,
         }));
-    }, [filteredData, mapping, transformSettings?.primaryMetric]);
+    }, [filteredData, rawData, mapping, transformSettings?.primaryMetric]);
 
     // Step 1: Lagged Data
     const laggedData = useMemo(() => {
-        if (!filteredData || filteredData.length === 0) return [];
-        const metric = mapping?.[transformSettings?.primaryMetric] || transformSettings?.primaryMetric || 'spend';
+        const sourceData = filteredData.length > 0 ? filteredData : rawData;
+        if (!sourceData || sourceData.length === 0) return [];
+        
+        const metricKey = transformSettings?.primaryMetric || 'spend';
+        const metric = mapping?.[metricKey] || (metricKey.charAt(0).toUpperCase() + metricKey.slice(1)) || 'Spend';
         const dateKey = mapping?.date || 'Date';
         
-        return filteredData.slice(0, 50).map((row, idx, arr) => {
-            const laggedIdx = idx - simLag;
+        return sourceData.slice(0, 80).map((row, idx, arr) => {
+            const laggedIdx = Math.max(0, idx - simLag);
             const raw = Number(row[metric]) || 0;
-            const laggedValue = laggedIdx >= 0 ? Number(arr[laggedIdx][metric]) || 0 : 0;
+            const laggedValue = Number(arr[laggedIdx][metric]) || 0;
             return {
                 name: row[dateKey] || `Week ${idx}`,
                 raw,
                 lagged: laggedValue
             };
         });
-    }, [filteredData, mapping, transformSettings?.primaryMetric, simLag]);
+    }, [filteredData, rawData, mapping, transformSettings?.primaryMetric, simLag]);
 
     // Step 2: Adstock data using lagged values
     const adstockData = useMemo(() => {
@@ -211,11 +220,10 @@ export const TransformPage = () => {
             return xs / (xs + ks);
         };
         
-        // Find max adstock to define x-axis range
         const maxAdstock = adstockData.length > 0 ? Math.max(...adstockData.map(d => d.adstock), simGamma * 2) : simGamma * 2;
         
-        return Array.from({ length: 50 }).map((_, idx) => {
-            const x = (idx / 49) * maxAdstock;
+        return Array.from({ length: 100 }).map((_, idx) => {
+            const x = (idx / 99) * maxAdstock;
             return {
                 x: x,
                 curve: hill(x),
@@ -225,24 +233,27 @@ export const TransformPage = () => {
 
     // Control variable data
     const controlVariableData = useMemo(() => {
-        if (!filteredData || filteredData.length === 0) return [];
+        const sourceData = filteredData.length > 0 ? filteredData : rawData;
+        if (!sourceData || sourceData.length === 0) return [];
+        
         const dateKey = mapping?.date || 'Date';
         const sensitivityMultiplier = simSensitivity === 0 ? -0.8 : simSensitivity === 1 ? -1.4 : -1.8;
-        return filteredData.slice(0, 50).map((row, idx) => {
+        
+        return sourceData.slice(0, 80).map((row, idx) => {
             const basePrice = 50 + Math.sin(idx / 5) * 10;
             const seasonalEffect = Math.cos(idx / 8) * 5;
-            const discount = (idx === 15 || idx === 35) ? 15 : 0;
+            const discount = (idx % 15 === 0 && idx > 0) ? 15 : 0;
             const finalPrice = basePrice + seasonalEffect - discount;
             const volumeChange = ((finalPrice - 50) / 50) * sensitivityMultiplier;
-            const volume = 1000 * (1 + volumeChange);
+            const volume = 1000 * (1 + volumeChange) + Math.random() * 100;
             return {
-                name: row[dateKey] || `Week ${idx}`,
+                name: row[dateKey] || `Point ${idx}`,
                 price: finalPrice,
                 volume: volume,
                 isDiscount: discount > 0,
             };
         });
-    }, [filteredData, mapping?.date, simSensitivity]);
+    }, [filteredData, rawData, mapping?.date, simSensitivity]);
 
     return (
         <div className="flex flex-col h-full animate-in slide-in-from-bottom-2 duration-500">

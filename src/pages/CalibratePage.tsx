@@ -112,11 +112,11 @@ export const CalibratePage = () => {
             <div className="grid grid-cols-2 gap-4">
               <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
                 <p className="text-slate-500 text-xs font-medium mb-1 uppercase tracking-wider">Model Fit</p>
-                <p className="text-xl font-bold text-slate-900">{metrics.modelFit.toFixed(3)}</p>
+                <p className="text-xl font-bold text-slate-900">{metrics?.modelFit?.toFixed(3) ?? '0.000'}</p>
               </div>
               <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
                 <p className="text-slate-500 text-xs font-medium mb-1 uppercase tracking-wider">MAPE</p>
-                <p className="text-xl font-bold text-slate-900">{metrics.mape.toFixed(1)}%</p>
+                <p className="text-xl font-bold text-slate-900">{metrics?.mape?.toFixed(1) ?? '0.0'}%</p>
               </div>
             </div>
           </div>

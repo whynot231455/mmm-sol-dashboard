@@ -30,7 +30,7 @@ export const HyperparameterSliders = ({
           <div className="flex justify-between items-center">
             <label className="text-sm font-semibold text-slate-700">Adstock Decay Max</label>
             <span className="text-sm font-bold text-slate-900 bg-slate-100 px-3 py-1 rounded-lg">
-              {adstockDecayMax.toFixed(1)}
+              {adstockDecayMax?.toFixed(1) ?? '0.0'}
             </span>
           </div>
           <input
@@ -38,7 +38,7 @@ export const HyperparameterSliders = ({
             min="0"
             max="1"
             step="0.1"
-            value={adstockDecayMax}
+            value={adstockDecayMax ?? 0.8}
             onChange={(e) => onAdstockChange(parseFloat(e.target.value))}
             className="w-full h-2 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-brand-third"
           />
@@ -53,7 +53,7 @@ export const HyperparameterSliders = ({
           <div className="flex justify-between items-center">
             <label className="text-sm font-semibold text-slate-700">Saturation Hill Max</label>
             <span className="text-sm font-bold text-slate-900 bg-slate-100 px-3 py-1 rounded-lg">
-              {saturationHillMax.toFixed(1)}
+              {saturationHillMax?.toFixed(1) ?? '0.0'}
             </span>
           </div>
           <input
@@ -61,7 +61,7 @@ export const HyperparameterSliders = ({
             min="0"
             max="5"
             step="0.1"
-            value={saturationHillMax}
+            value={saturationHillMax ?? 3.5}
             onChange={(e) => onSaturationChange(parseFloat(e.target.value))}
             className="w-full h-2 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-brand-third"
           />

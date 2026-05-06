@@ -156,9 +156,9 @@ export const GeoLiftResults = ({
                   border: "1px solid #e2e8f0",
                   fontSize: "13px",
                 }}
-                formatter={(value: any, name: any) => [ // eslint-disable-line @typescript-eslint/no-explicit-any
+                formatter={(value: any, name: any) => [
                   `$${(Number(value ?? 0) / 1000).toFixed(1)}K`,
-                  name,
+                  String(name ?? ""),
                 ]}
                 labelFormatter={(label: unknown) => {
                   const d = new Date(String(label));
@@ -263,9 +263,9 @@ export const GeoLiftResults = ({
                   border: "1px solid #e2e8f0",
                   fontSize: "13px",
                 }}
-                formatter={(value: any, name: any) => [ // eslint-disable-line @typescript-eslint/no-explicit-any
+                formatter={(value: any, name: any) => [
                   `${value ?? 0}x`,
-                  name,
+                  String(name ?? ""),
                 ]}
               />
               <Legend wrapperStyle={{ fontSize: "12px" }} />
@@ -310,13 +310,13 @@ export const GeoLiftResults = ({
                 <div className="flex items-center gap-1">
                   <span
                     className={`text-sm font-bold ${
-                      ch.delta > 0 ? "text-emerald-600" : "text-red-500"
+                      (ch.delta ?? 0) > 0 ? "text-emerald-600" : "text-red-500"
                     }`}
                   >
-                    {ch.delta > 0 ? "+" : ""}
-                    {ch.delta}%
+                    {(ch.delta ?? 0) > 0 ? "+" : ""}
+                    {ch.delta ?? 0}%
                   </span>
-                  {ch.delta > 0 && (
+                  {(ch.delta ?? 0) > 0 && (
                     <ArrowUpRight size={14} className="text-emerald-500" />
                   )}
                 </div>

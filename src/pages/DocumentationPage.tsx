@@ -90,7 +90,7 @@ export const DocumentationPage = () => {
     const handleSectionChange = (sectionId: string) => {
         const nextSection = filteredDocumentation.find((section) => section.id === sectionId);
         setActiveSectionId(sectionId);
-        setActiveArticleId(nextSection?.articles[0]?.id || '');
+        setActiveArticleId(nextSection?.articles[0]?.id ?? '');
     };
 
     return (
@@ -210,7 +210,7 @@ export const DocumentationPage = () => {
                                 <button
                                     key={article.id}
                                     type="button"
-                                    onClick={() => setActiveArticleId(article.id)}
+                                    onClick={() => setActiveArticleId(article.id ?? '')}
                                     className={cn(
                                         "rounded-xl border px-4 py-3 text-left text-sm font-semibold transition-all",
                                         article.id === activeArticle?.id
@@ -227,7 +227,7 @@ export const DocumentationPage = () => {
                     <div className="space-y-4">
                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">On This Page</span>
                         <nav className="flex flex-col gap-3">
-                            {activeArticle?.onPageLinks.map((link, idx) => (
+                            {activeArticle?.onPageLinks?.map((link, idx) => (
                                 <a 
                                     key={link.id} 
                                     href={`#${link.id}`}

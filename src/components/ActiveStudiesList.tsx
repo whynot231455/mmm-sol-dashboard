@@ -1,10 +1,4 @@
-interface ActiveStudy {
-  id: string;
-  name: string;
-  source: string;
-  date: string;
-  enabled: boolean;
-}
+import type { ActiveStudy } from '../hooks/useCalibrateData';
 
 interface ActiveStudiesListProps {
   studies: ActiveStudy[];
@@ -33,7 +27,9 @@ export const ActiveStudiesList = ({ studies, onToggle }: ActiveStudiesListProps)
               <div className={`w-2 h-2 rounded-full ${study.enabled ? 'bg-green-500' : 'bg-slate-300'}`}></div>
               <div>
                 <p className="text-sm font-bold text-slate-900">{study.name}</p>
-                <p className="text-xs text-slate-500">{study.source} • {study.date}</p>
+                <p className="text-xs text-slate-500">
+                  {study.source || 'Unknown Source'} {study.date ? `• ${study.date}` : ''}
+                </p>
               </div>
             </div>
             

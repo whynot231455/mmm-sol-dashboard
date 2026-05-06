@@ -15,12 +15,12 @@ const COLORS = ["#871F1E", "#ED1B24", "#F58726", "#FACC00"];
 
 export const IncrementalityChart = ({ data }: IncrementalityChartProps) => {
   return (
-    <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm h-[400px]">
+    <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm h-[500px]">
       <div className="mb-6">
         <h3 className="text-lg font-bold text-slate-900">Incrementality</h3>
         <p className="text-slate-500 text-sm">Paid vs Organic Lift</p>
       </div>
-      <div className="h-[260px] w-full">
+      <div className="h-[360px] w-full">
         <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
         <PieChart>
           <Pie
@@ -32,6 +32,7 @@ export const IncrementalityChart = ({ data }: IncrementalityChartProps) => {
             fill="#8884d8"
             paddingAngle={5}
             dataKey="value"
+            isAnimationActive={false}
           >
             {data.map((_, index) => (
               <Cell

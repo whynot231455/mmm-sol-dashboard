@@ -1,9 +1,4 @@
-interface CoefficientChange {
-  channel: string;
-  baselineCoeff: string;
-  calibratedCoeff: string;
-  impact: string;
-}
+import type { CoefficientChange } from '../hooks/useCalibrateData';
 
 interface CoefficientChangesTableProps {
   changes: CoefficientChange[];
@@ -39,7 +34,8 @@ export const CoefficientChangesTable = ({ changes }: CoefficientChangesTableProp
           </thead>
           <tbody className="divide-y divide-slate-100">
             {changes.map((change, index) => {
-              const isPositive = change.impact.startsWith('+');
+              const impact = change.impact || 0;
+              const isPositive = impact >= 0;
               return (
                 <tr key={index} className="hover:bg-slate-50 transition-colors">
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -49,14 +45,14 @@ export const CoefficientChangesTable = ({ changes }: CoefficientChangesTableProp
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                    {change.baselineCoeff}
+                    {change.baselineCoeff?.toFixed(4) ?? '0.0000'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-slate-900">
-                    {change.calibratedCoeff}
+                    {change.calibratedCoeff?.toFixed(4) ?? '0.0000'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`text-sm font-bold ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
-                      {change.impact}
+                      {isPositive ? '+' : ''}{impact.toFixed(2)}
                     </span>
                   </td>
                 </tr>

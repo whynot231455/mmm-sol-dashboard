@@ -58,14 +58,14 @@ export const GeoLiftTestDesign = ({
   const avgSimilarity =
     controlRegions.length > 0
       ? Math.round(
-          controlRegions.reduce((s, r) => s + r.similarity, 0) /
+          controlRegions.reduce((s, r) => s + (r.similarity ?? 0), 0) /
             controlRegions.length,
         )
       : 0;
 
   // Find the recommended duration (where power95 >= 80)
   const recommendedWeeks =
-    powerAnalysis.find((p) => p.power95 >= 80)?.weeks ?? 8;
+    powerAnalysis.find((p) => (p.power95 ?? 0) >= 80)?.weeks ?? 8;
 
   return (
     <div className="space-y-6">
@@ -469,14 +469,14 @@ const RegionCard = ({
           </span>
           <span
             className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${
-              region.similarity >= 80
+              (region.similarity ?? 0) >= 80
                 ? "bg-emerald-100 text-emerald-700"
-                : region.similarity >= 65
+                : (region.similarity ?? 0) >= 65
                   ? "bg-amber-100 text-amber-700"
                   : "bg-red-100 text-red-700"
             }`}
           >
-            {region.similarity}%
+            {region.similarity ?? 0}%
           </span>
         </div>
         {!compact && (
@@ -485,7 +485,7 @@ const RegionCard = ({
               <Users size={11} /> {(region.population / 1000000).toFixed(1)}M
             </span>
             <span className="text-xs text-slate-500 flex items-center gap-1">
-              <DollarSign size={11} /> ${(region.avgRevenue / 1000).toFixed(0)}
+              <DollarSign size={11} /> ${((region.avgRevenue ?? 0) / 1000).toFixed(0)}
               K/wk
             </span>
           </div>

@@ -21,6 +21,12 @@ function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+const formatDuration = (seconds: number) => {
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${mins}:${secs.toString().padStart(2, '0')}`;
+};
+
 export const VideoTutorialsPage = () => {
   const { tutorials, addTutorial, deleteTutorial } =
     useDataStore();
@@ -63,8 +69,7 @@ export const VideoTutorialsPage = () => {
           .includes(selectedTopic.toLowerCase());
 
       let matchesDuration = true;
-      const minsString = tutorial.duration.split(":")[0];
-      const mins = parseInt(minsString);
+      const mins = Math.floor(tutorial.duration / 60);
       if (selectedDuration === "< 5 min") matchesDuration = mins < 5;
       else if (selectedDuration === "5-15 min")
         matchesDuration = mins >= 5 && mins <= 15;
@@ -81,15 +86,15 @@ export const VideoTutorialsPage = () => {
     const newTutorial: Tutorial = {
       id: Date.now().toString(),
       title: ytTitle,
-      duration: "10:00", // Mock duration
+      duration: 600, // 10 minutes in seconds
       thumbnail:
         "https://images.unsplash.com/photo-1611162617474-5b21e879e113?q=80&w=1000&auto=format&fit=crop",
-      type: "youtube",
+      category: "youtube",
       status: "Not Started",
       description: "User linked YouTube video.",
       progress: 0,
       videoUrl: ytUrl,
-      views: "0",
+      views: 0,
     };
     addTutorial(newTutorial);
     setYtUrl("");
@@ -242,7 +247,7 @@ export const VideoTutorialsPage = () => {
                     </div>
                     <div className="absolute bottom-6 left-6 flex items-center gap-3">
                       <div className="px-3 py-1 bg-black/60 backdrop-blur-md rounded-lg text-[11px] font-black text-white">
-                        {featuredTutorial.duration}
+                        {formatDuration(featuredTutorial.duration)}
                       </div>
                       <div className="px-3 py-1 bg-[#F58726] rounded-lg text-[11px] font-black text-white">
                         {featuredTutorial.views || "1.2k"} VIEWS
@@ -355,7 +360,7 @@ export const VideoTutorialsPage = () => {
                       </button>
                     </div>
                     <div className="absolute bottom-3 right-3 px-2 py-0.5 bg-black/60 backdrop-blur-md rounded-lg text-[10px] font-black text-white">
-                      {tutorial.duration}
+                      {formatDuration(tutorial.duration)}
                     </div>
                     {tutorial.status === "Completed" && (
                       <div className="absolute top-3 left-3 w-6 h-6 bg-emerald-500 rounded-lg flex items-center justify-center shadow-lg animate-in zoom-in duration-300">

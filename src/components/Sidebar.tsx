@@ -23,7 +23,6 @@ import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { useDataStore } from "../store/useDataStore";
 import type { PageType } from "../store/useDataStore";
-import { supabase } from "../lib/supabase";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -86,87 +85,35 @@ export const Sidebar = () => {
     {
       title: "Dashboard",
       items: [
-        {
-          id: "measure" as PageType,
-          label: "Measure",
-          icon: <BarChart3 size={18} />,
-        },
-        {
-          id: "predict" as PageType,
-          label: "Predict",
-          icon: <TrendingUp size={18} />,
-        },
-        {
-          id: "optimize" as PageType,
-          label: "Optimize",
-          icon: <Settings2 size={18} />,
-        },
-        {
-          id: "chat" as PageType,
-          label: "Chat",
-          icon: <MessageSquare size={18} />,
-        },
+        { id: "measure" as PageType, label: "Measure", icon: <BarChart3 size={18} /> },
+        { id: "predict" as PageType, label: "Predict", icon: <TrendingUp size={18} /> },
+        { id: "optimize" as PageType, label: "Optimize", icon: <Settings2 size={18} /> },
+        { id: "chat" as PageType, label: "Chat", icon: <MessageSquare size={18} /> },
       ],
     },
     {
       title: "Data",
       items: [
-        {
-          id: "import" as PageType,
-          label: "Import",
-          icon: <Upload size={18} />,
-        },
-        {
-          id: "connect" as PageType,
-          label: "Connect",
-          icon: <Link2 size={18} />,
-        },
-        {
-          id: "transform" as PageType,
-          label: "Transform",
-          icon: <FileJson size={18} />,
-        },
+        { id: "import" as PageType, label: "Import", icon: <Upload size={18} /> },
+        { id: "connect" as PageType, label: "Connect", icon: <Link2 size={18} /> },
+        { id: "transform" as PageType, label: "Transform", icon: <FileJson size={18} /> },
       ],
     },
     {
       title: "Model",
       items: [
-        {
-          id: "pipelines" as PageType,
-          label: "Pipelines",
-          icon: <Workflow size={18} />,
-        },
+        { id: "pipelines" as PageType, label: "Pipelines", icon: <Workflow size={18} /> },
         { id: "train" as PageType, label: "Train", icon: <Brain size={18} /> },
-        {
-          id: "validate" as PageType,
-          label: "Validate",
-          icon: <CheckCircle2 size={18} />,
-        },
-        {
-          id: "calibrate" as PageType,
-          label: "Calibrate",
-          icon: <Target size={18} />,
-        },
-        {
-          id: "geolift" as PageType,
-          label: "GeoLift",
-          icon: <FlaskConical size={18} />,
-        },
+        { id: "validate" as PageType, label: "Validate", icon: <CheckCircle2 size={18} /> },
+        { id: "calibrate" as PageType, label: "Calibrate", icon: <Target size={18} /> },
+        { id: "geolift" as PageType, label: "GeoLift", icon: <FlaskConical size={18} /> },
       ],
     },
     {
       title: "Learn",
       items: [
-        {
-          id: "video-tutorials" as PageType,
-          label: "Video Tutorials",
-          icon: <Video size={18} />,
-        },
-        {
-          id: "documentation" as PageType,
-          label: "Documentation",
-          icon: <BookOpen size={18} />,
-        },
+        { id: "video-tutorials" as PageType, label: "Video Tutorials", icon: <Video size={18} /> },
+        { id: "documentation" as PageType, label: "Documentation", icon: <BookOpen size={18} /> },
       ],
     },
   ];
@@ -261,25 +208,19 @@ export const Sidebar = () => {
       )}
 
       <div className={cn("border-t border-slate-100 p-4", isCollapsed ? "lg:px-3" : "space-y-3")}>
-
         <div className={cn("flex items-center", isCollapsed ? "justify-center" : "gap-3 px-2")}>
           <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-[#4a151b] to-[#871F1E] text-xs font-black text-white shadow-sm">
             JD
           </div>
           {!isCollapsed && (
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-slate-900 truncate">
-                Jane Doe
-              </p>
+              <p className="text-sm font-semibold text-slate-900 truncate">Jane Doe</p>
               <p className="text-xs text-slate-500 truncate">Data Scientist</p>
             </div>
           )}
         </div>
         <button
-          onClick={async () => {
-            await supabase.auth.signOut();
-            handleNavigate("login");
-          }}
+          onClick={() => handleNavigate("login")}
           className={cn(
             "flex items-center rounded-xl px-4 py-2 text-xs font-black text-slate-500 transition-all uppercase tracking-widest hover:text-brand-primary hover:bg-brand-primary/5",
             isCollapsed ? "w-10 justify-center px-0 lg:mx-auto" : "w-full gap-3",
@@ -287,16 +228,7 @@ export const Sidebar = () => {
           aria-label="Logout"
         >
           <div className="flex-shrink-0">
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="3"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
               <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
               <polyline points="16 17 21 12 16 7"></polyline>
               <line x1="21" y1="12" x2="9" y2="12"></line>
@@ -321,12 +253,8 @@ export const Sidebar = () => {
             <Menu className="h-5 w-5" />
           </button>
           <div className="min-w-0 flex-1 text-center">
-            <p className="text-sm font-black uppercase tracking-[0.2em] text-brand-primary">
-              Sol Analytics
-            </p>
-            <p className="text-[11px] font-semibold text-slate-400">
-              MMM Dashboard
-            </p>
+            <p className="text-sm font-black uppercase tracking-[0.2em] text-brand-primary">Sol Analytics</p>
+            <p className="text-[11px] font-semibold text-slate-400">MMM Dashboard</p>
           </div>
           <div className="h-10 w-10 rounded-xl bg-[#4a151b]/5" />
         </div>

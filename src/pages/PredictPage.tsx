@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { usePredictData } from "../hooks/usePredictData";
 import { ForecastChart } from "../components/ForecastChart";
-import { ChannelHeatmap } from "../components/ChannelHeatmap";
 import { KPICard } from "../components/KPICard";
 import { TrendingUp, ShieldCheck, Calendar, Download } from "lucide-react";
 import { useDataStore } from "../store/useDataStore";
@@ -34,7 +33,7 @@ export const PredictPage = () => {
     );
   }
 
-  const { charts, metrics, heatmap } = data;
+  const { charts, metrics } = data;
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500 pb-12">
@@ -90,10 +89,6 @@ export const PredictPage = () => {
         <ForecastChart data={charts.combined} />
       </div>
 
-      {/* Heatmap Section */}
-      <div>
-        <ChannelHeatmap data={heatmap} />
-      </div>
     </div>
   );
 };

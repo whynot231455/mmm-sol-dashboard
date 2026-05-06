@@ -77,9 +77,9 @@ export const RevenueImpactChart = ({ data }: RevenueImpactChartProps) => {
               }}
               itemStyle={{ color: "#1e293b", fontWeight: 600, fontSize: '12px' }}
               labelStyle={{ color: "#94a3b8", fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', marginBottom: '4px' }}
-              formatter={(val: unknown, name: string | undefined) => [
-                formatSmartCurrency(Number(val || 0)),
-                name || "",
+              formatter={(val: any, name: any) => [
+                formatSmartCurrency(Number(val ?? 0)),
+                String(name ?? ""),
               ]}
             />
             <Bar

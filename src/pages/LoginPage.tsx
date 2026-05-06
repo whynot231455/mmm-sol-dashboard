@@ -1,56 +1,29 @@
 import React, { useState } from 'react';
-import { Mail, Lock, BarChart3, Moon } from 'lucide-react';
+import { Mail, Lock, BarChart3 } from 'lucide-react';
 import { useDataStore } from '../store/useDataStore';
-import { supabase } from '../lib/supabase';
 
 export const LoginPage: React.FC = () => {
     const { setActivePage } = useDataStore();
-    const [email, setEmail] = useState(() => localStorage.getItem('remembered_email') || '');
-    const [password, setPassword] = useState(() => localStorage.getItem('remembered_password') || '');
-    const [rememberMe, setRememberMe] = useState(() => localStorage.getItem('remember_me') === 'true');
     const [isLoading, setIsLoading] = useState(false);
-    const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
-        setErrorMessage(null);
-
-        localStorage.setItem('remember_me', rememberMe ? 'true' : 'false');
-        if (rememberMe) {
-            localStorage.setItem('remembered_email', email.trim());
-            localStorage.setItem('remembered_password', password);
-        } else {
-            localStorage.removeItem('remembered_email');
-            localStorage.removeItem('remembered_password');
-        }
-
-        const { error } = await supabase.auth.signInWithPassword({
-            email: email.trim(),
-            password,
-        });
-
-        setIsLoading(false);
-
-        if (error) {
-            setErrorMessage(error.message);
-            return;
-        }
-
-        setActivePage('measure');
+        setTimeout(() => {
+            setIsLoading(false);
+            setActivePage('measure');
+        }, 800);
     };
 
     return (
         <div className="relative min-h-screen flex font-['Inter',sans-serif] selection:bg-brand-primary/10">
-                        {/* Full-screen loading overlay */}
             {isLoading && (
                 <div className="absolute inset-0 z-50 bg-white/80 backdrop-blur-sm flex items-center justify-center">
                     <div className="w-8 h-8 border-2 border-slate-200 border-t-[#450a0a] rounded-full animate-spin" />
                 </div>
             )}
-            {/* Left Side: Dashboard Preview & Glassmorphism Card */}
+            {/* Left Side: Dashboard Preview */}
             <div className="hidden lg:block lg:w-[60%] relative overflow-hidden bg-[#0A0A0B]">
-                {/* Dashboard Image Overlay */}
                 <div 
                     className="absolute inset-0 opacity-40 bg-cover bg-center"
                     style={{ 
@@ -58,11 +31,7 @@ export const LoginPage: React.FC = () => {
                         filter: 'brightness(0.6) contrast(1.2)'
                     }}
                 />
-                
-                {/* Gradient Overlay */}
                 <div className="absolute inset-0 bg-gradient-to-br from-[#0F0F12]/80 via-transparent to-[#450a0a]/20" />
-
-                {/* Glassmorphism Card */}
                 <div className="absolute inset-0 flex items-center justify-center p-12">
                     <div className="max-w-[480px] w-full bg-white/5 backdrop-blur-xl border border-white/10 rounded-[40px] p-12 shadow-2xl space-y-8 animate-in fade-in zoom-in duration-700">
                         <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center border border-white/20">
@@ -84,7 +53,6 @@ export const LoginPage: React.FC = () => {
             {/* Right Side: Login Form */}
             <div className="w-full lg:w-[40%] bg-white flex flex-col relative">
                 <div className="flex-1 flex flex-col justify-center px-8 sm:px-12 lg:px-20 max-w-[600px] mx-auto w-full">
-                    {/* Header & Logo */}
                     <div className="space-y-0 mb-12">
                         <div className="flex flex-col items-center">
                             <img 
@@ -93,14 +61,12 @@ export const LoginPage: React.FC = () => {
                                 className="h-28 w-auto object-contain"
                             />
                         </div>
-
                         <div className="space-y-2 text-center">
                             <h3 className="text-3xl font-black text-[#1F2937]">Welcome Back</h3>
                             <p className="text-slate-500 font-medium">Please enter your details to sign in.</p>
                         </div>
                     </div>
 
-                    {/* Form */}
                     <form onSubmit={handleLogin} className="space-y-6">
                         <div className="space-y-5">
                             <div className="space-y-2">
@@ -112,10 +78,8 @@ export const LoginPage: React.FC = () => {
                                     <input
                                         id="login-email"
                                         type="email"
-                                        required
+                                        defaultValue="demo@solanalytics.com"
                                         className="w-full bg-[#F9FAFB] border border-slate-200 rounded-2xl py-3.5 pl-12 pr-4 text-slate-900 text-sm font-semibold focus:border-[#450a0a] outline-none focus:ring-4 focus:ring-[#450a0a]/5 transition-all"
-                                        value={email}
-                                        onChange={(e) => setEmail(e.target.value)}
                                         placeholder="jane@solanalytics.com"
                                     />
                                 </div>
@@ -130,10 +94,8 @@ export const LoginPage: React.FC = () => {
                                     <input
                                         id="login-password"
                                         type="password"
-                                        required
+                                        defaultValue="password"
                                         className="w-full bg-[#F9FAFB] border border-slate-200 rounded-2xl py-3.5 pl-12 pr-4 text-slate-900 text-sm font-semibold focus:border-[#450a0a] outline-none focus:ring-4 focus:ring-[#450a0a]/5 transition-all"
-                                        value={password}
-                                        onChange={(e) => setPassword(e.target.value)}
                                         placeholder="••••••••"
                                     />
                                 </div>
@@ -144,9 +106,8 @@ export const LoginPage: React.FC = () => {
                             <label className="flex items-center gap-2 text-slate-500 cursor-pointer group">
                                 <input 
                                     type="checkbox" 
+                                    defaultChecked
                                     className="w-4 h-4 rounded border-slate-300 text-[#450a0a] focus:ring-[#450a0a]"
-                                    checked={rememberMe}
-                                    onChange={(e) => setRememberMe(e.target.checked)}
                                 />
                                 <span className="group-hover:text-slate-700 transition-colors">Remember me for 30 days</span>
                             </label>
@@ -162,15 +123,8 @@ export const LoginPage: React.FC = () => {
                                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                             ) : "Log In"}
                         </button>
-
-                        {errorMessage ? (
-                            <p className="text-sm font-medium text-red-700" role="alert">
-                                {errorMessage}
-                            </p>
-                        ) : null}
                     </form>
 
-                    {/* Social Login */}
                     <div className="mt-8 space-y-6">
                         <div className="relative">
                             <div className="absolute inset-0 flex items-center">
@@ -197,17 +151,7 @@ export const LoginPage: React.FC = () => {
                         </p>
                     </div>
                 </div>
-
-                {/* Dark Mode Toggle Placeholder */}
-                <div className="absolute bottom-8 right-8">
-                    <button className="w-10 h-10 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-400 hover:text-slate-600 transition-all">
-                        <Moon size={18} />
-                    </button>
-                </div>
             </div>
         </div>
     );
 };
-
-
-

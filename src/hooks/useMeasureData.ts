@@ -51,38 +51,44 @@ export const useMeasureData = (filters?: MeasureDataFilters, options?: { enabled
         }
 
         // Date Filtering
-        if (filters?.dateRange && filters.dateRange !== 'All Time') {
-            // Find max date more efficiently (one-pass)
-            let maxTime = 0;
+        const dateRangeFilter = filters?.dateRange || 'Last 30 Days';
+        
+        if (dateRangeFilter !== 'All Time') {
+            const range = dateRangeFilter.toLowerCase();
+            
+            // Find the latest date in the dataset to calculate relative ranges
+            let latestTime = 0;
             rawData.forEach(row => {
-                const val = row[mapping.date!] as string | undefined;
-                if (val) {
-                    const d = new Date(val).getTime();
-                    if (!isNaN(d) && d > maxTime) maxTime = d;
+                const dateVal = row[mapping.date!];
+                if (dateVal) {
+                    const time = new Date(dateVal as string).getTime();
+                    if (!isNaN(time) && time > latestTime) latestTime = time;
                 }
             });
 
-            const maxDate = maxTime > 0 ? new Date(maxTime) : new Date();
-            let minDate: Date | null = null;
-
-            if (filters.dateRange === 'Last 30 Days') {
-                minDate = new Date(maxDate);
-                minDate.setDate(maxDate.getDate() - 30);
-            } else if (filters.dateRange === 'Last 90 Days') {
-                minDate = new Date(maxDate);
-                minDate.setDate(maxDate.getDate() - 90);
-            }
-
-            if (minDate) {
+            if (latestTime > 0) {
+                const maxDate = new Date(latestTime);
+                maxDate.setHours(23, 59, 59, 999);
+                
+                const minDate = new Date(latestTime);
+                if (range.includes('30')) {
+                    minDate.setDate(maxDate.getDate() - 30);
+                } else if (range.includes('90')) {
+                    minDate.setDate(maxDate.getDate() - 90);
+                } else {
+                    // Default to 30 days if something is weird but we're not in "All Time"
+                    minDate.setDate(maxDate.getDate() - 30);
+                }
+                
                 minDate.setHours(0, 0, 0, 0);
                 const minTime = minDate.getTime();
-                const maxTimeVal = maxDate.setHours(23, 59, 59, 999);
+                const maxTime = maxDate.getTime();
 
                 filteredData = filteredData.filter(row => {
-                    const val = row[mapping.date!] as string | undefined;
-                    if (!val) return false;
-                    const rowTime = new Date(val).getTime();
-                    return !isNaN(rowTime) && rowTime >= minTime && rowTime <= maxTimeVal;
+                    const dateVal = row[mapping.date!];
+                    if (!dateVal) return false;
+                    const rowTime = new Date(dateVal as string).getTime();
+                    return !isNaN(rowTime) && rowTime >= minTime && rowTime <= maxTime;
                 });
             }
         }

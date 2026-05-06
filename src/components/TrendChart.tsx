@@ -265,10 +265,10 @@ export const TrendChart = ({ data, onExpand }: TrendChartProps) => {
               tickLine={false}
               tick={{ fill: "#94a3b8", fontSize: 10, fontWeight: 500 }}
               dy={10}
-              minTickGap={30}
+              minTickGap={40}
               tickFormatter={(tick) => {
                 const d = new Date(tick);
-                return `w${Math.ceil((d.getDate() - 1 + new Date(d.getFullYear(), d.getMonth(), 1).getDay()) / 7)} ${d.getFullYear()}`;
+                return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
               }}
             />
             <YAxis
@@ -310,6 +310,7 @@ export const TrendChart = ({ data, onExpand }: TrendChartProps) => {
                 barSize={20}
                 name={channel}
                 radius={[0, 0, 0, 0]}
+                isAnimationActive={false}
               />
             ))}
 
@@ -321,6 +322,7 @@ export const TrendChart = ({ data, onExpand }: TrendChartProps) => {
               dot={false}
               activeDot={{ r: 4, strokeWidth: 0 }}
               name="Total Revenue"
+              isAnimationActive={false}
             />
           </ComposedChart>
         </ResponsiveContainer>

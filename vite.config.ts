@@ -17,7 +17,7 @@ export default defineConfig({
         manualChunks: {
           vendor: ['react', 'react-dom', 'lucide-react'],
           charts: ['recharts'],
-          utils: ['axios', '@supabase/supabase-js', 'zustand', 'idb-keyval', 'papaparse'],
+          utils: ['zustand', 'papaparse'],
         },
       },
     },
