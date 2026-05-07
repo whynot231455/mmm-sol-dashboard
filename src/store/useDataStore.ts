@@ -136,6 +136,7 @@ interface DataState {
     addTutorial: (tutorial: Omit<Tutorial, 'id'>) => void;
     deleteTutorial: (id: string) => void;
     setTransformSettings: (settings: Partial<TransformSettings>) => void;
+    syncPlatformData: (channelName: string, newData: Record<string, unknown>[]) => void;
     reset: () => void;
 }
 
@@ -293,13 +294,88 @@ const DEMO_INTEGRATED_DATA: Record<string, unknown>[] = (() => {
 
 const DEMO_DOCUMENTATION: DocumentationSection[] = [
     {
-        id: '1',
+        id: 'getting_started',
         title: 'Getting Started',
         articles: [
-            { id: '1', title: 'Introduction', content: 'Welcome to MMM', tags: ['intro', 'basics'], abstract: 'Introduction to MMM', lastUpdated: '2024-01-01', readingTime: 5, onPageLinks: [] },
-            { id: '2', title: 'Data Import', content: 'How to import your data', tags: ['data', 'import'], abstract: 'Data import guide', lastUpdated: '2024-01-02', readingTime: 10, onPageLinks: [] },
-        ],
+            {
+                id: 'intro_to_mmm',
+                title: 'Introduction to MMM',
+                content: `
+                    <h2>What is Marketing Mix Modeling?</h2>
+                    <p>Marketing Mix Modeling (MMM) is an analytical approach that uses historical data to quantify the impact of various marketing tactics on sales or other key performance indicators (KPIs).</p>
+                    <p>By understanding the true ROI of each channel, businesses can make data-driven decisions on how to allocate their marketing budget more effectively.</p>
+                    <h2>Key Concepts</h2>
+                    <ul>
+                        <li><strong>Base vs. Incremental Sales:</strong> Differentiating between sales that would have happened anyway (base) and those driven by marketing efforts (incremental).</li>
+                        <li><strong>Adstock (Carryover Effect):</strong> The prolonged effect of advertising on consumer purchase behavior.</li>
+                        <li><strong>Diminishing Returns:</strong> The concept that as you spend more on a channel, the incremental return on that spend decreases.</li>
+                    </ul>
+                `,
+                tags: ['intro', 'basics', 'theory'],
+                abstract: 'Learn the foundational concepts of Marketing Mix Modeling and how it can transform your budget allocation.',
+                lastUpdated: '2024-05-01',
+                readingTime: 5,
+                onPageLinks: [
+                    { id: 'what-is-mmm', title: 'What is MMM?' },
+                    { id: 'key-concepts', title: 'Key Concepts' }
+                ]
+            },
+            {
+                id: 'data_requirements',
+                title: 'Data Requirements & Import',
+                content: `
+                    <h2>Preparing Your Data</h2>
+                    <p>For accurate modeling, your data needs to be clean, consistent, and structured correctly. We recommend a minimum of <strong>2 years of weekly data</strong>.</p>
+                    <h2>Required Data Points</h2>
+                    <ul>
+                        <li><strong>Date:</strong> The timestamp for each row of data (daily or weekly).</li>
+                        <li><strong>Target Metric:</strong> The KPI you are trying to drive (e.g., Revenue, Conversions, Sales Volume).</li>
+                        <li><strong>Marketing Spend:</strong> The amount spent on each channel for the given time period.</li>
+                    </ul>
+                    <h2>Optional but Recommended</h2>
+                    <ul>
+                        <li><strong>Impressions/Clicks:</strong> Provides a deeper understanding of upper-funnel vs lower-funnel impact.</li>
+                        <li><strong>External Factors:</strong> Holidays, seasonality, promotions, or macroeconomic factors that influence your target metric.</li>
+                    </ul>
+                `,
+                tags: ['data', 'import', 'preparation'],
+                abstract: 'Understand exactly what data you need, how it should be formatted, and the best practices for importing it into the platform.',
+                lastUpdated: '2024-05-02',
+                readingTime: 8,
+                onPageLinks: [
+                    { id: 'preparing-your-data', title: 'Preparing Your Data' },
+                    { id: 'required-data', title: 'Required Data Points' },
+                    { id: 'optional-data', title: 'Optional Data' }
+                ]
+            }
+        ]
     },
+    {
+        id: 'advanced_modeling',
+        title: 'Advanced Modeling',
+        articles: [
+            {
+                id: 'adstock_saturation',
+                title: 'Adstock and Saturation',
+                content: `
+                    <h2>Understanding Adstock</h2>
+                    <p>Adstock models the delayed effect of advertising. When a user sees an ad, they might not purchase immediately, but the brand awareness carries over into subsequent weeks.</p>
+                    <p>You can configure the <strong>Decay Rate</strong> to control how quickly the ad effect fades over time.</p>
+                    <h2>Saturation Curves</h2>
+                    <p>Saturation represents diminishing returns. As you increase spend on a specific channel, the cost to acquire an additional customer typically increases.</p>
+                    <p>Our platform supports various curve types, including <strong>Hill</strong>, <strong>S-Curve</strong>, and <strong>Power</strong> functions to accurately capture the specific dynamics of each channel.</p>
+                `,
+                tags: ['modeling', 'adstock', 'saturation'],
+                abstract: 'Dive deep into how the platform handles time-delayed effects and diminishing returns across your marketing channels.',
+                lastUpdated: '2024-05-05',
+                readingTime: 12,
+                onPageLinks: [
+                    { id: 'understanding-adstock', title: 'Understanding Adstock' },
+                    { id: 'saturation-curves', title: 'Saturation Curves' }
+                ]
+            }
+        ]
+    }
 ];
 
 const DEMO_TRANSFORM_SETTINGS: TransformSettings = {
@@ -386,6 +462,27 @@ export const useDataStore = create<DataState>()((set) => ({
                 delete newMapping[key];
             }
         }
+        
+        // Auto-detect missing mappings based on keywords
+        headers.forEach(header => {
+            const lower = header.toLowerCase();
+            if (!newMapping.date && (lower === 'date' || lower === 'timestamp' || lower === 'day' || lower === 'week')) {
+                newMapping.date = header;
+            }
+            if (!newMapping.revenue && (lower.includes('revenue') || lower.includes('sales'))) {
+                newMapping.revenue = header;
+            }
+            if (!newMapping.spend && (lower.includes('spend') || lower.includes('cost'))) {
+                newMapping.spend = header;
+            }
+            if (!newMapping.channel && (lower === 'channel' || lower.includes('platform') || lower === 'source')) {
+                newMapping.channel = header;
+            }
+            if (!newMapping.country && (lower === 'country' || lower === 'region' || lower === 'location' || lower === 'geo')) {
+                newMapping.country = header;
+            }
+        });
+
         return {
             rawData: data,
             headers: headers,
@@ -433,6 +530,18 @@ export const useDataStore = create<DataState>()((set) => ({
     setTransformSettings: (settings) => set((state) => ({
         transformSettings: { ...state.transformSettings, ...settings }
     })),
+    
+    syncPlatformData: (channelName, newData) => set((state) => {
+        // Remove existing data for this channel from integrated store
+        const filteredIntegrated = state.integratedData.filter(row => 
+            String(row['Channel']).toLowerCase() !== channelName.toLowerCase()
+        );
+
+        return {
+            integratedData: [...filteredIntegrated, ...newData],
+            isLoaded: true
+        };
+    }),
 
     reset: () => set({
         rawData: [],

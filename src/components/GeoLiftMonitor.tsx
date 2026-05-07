@@ -194,7 +194,7 @@ export const GeoLiftMonitor = ({
               Confidence
             </span>
           </div>
-          <div className="text-2xl font-black text-slate-900">87%</div>
+          <div className="text-2xl font-black text-slate-900">{Math.round(testConfig.confidence * 100)}%</div>
           <p className="text-xs text-slate-500 mt-1">
             Current statistical confidence
           </p>

@@ -15,7 +15,7 @@ interface ConnectionWizardProps {
   } | null;
   mode?: 'connect' | 'manage';
   onClose: () => void;
-  onSuccess: (platformId: string) => void;
+  onSuccess: (platformId: string, months: number) => void;
   onDisconnect: (platformId: string) => void;
 }
 
@@ -24,6 +24,7 @@ type WizardStep = 'guide' | 'input' | 'connecting' | 'success' | 'manage';
 export const ConnectionWizard = ({ platform, mode = 'connect', onClose, onSuccess, onDisconnect }: ConnectionWizardProps) => {
   const [step, setStep] = useState<WizardStep>(mode === 'manage' ? 'manage' : 'guide');
   const [accountId, setAccountId] = useState('');
+  const [timeRange, setTimeRange] = useState<number>(24);
   const [ingestionProgress, setIngestionProgress] = useState(0);
 
   useEffect(() => {
@@ -56,6 +57,7 @@ export const ConnectionWizard = ({ platform, mode = 'connect', onClose, onSucces
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setStep(mode === 'manage' ? 'manage' : 'guide');
       setAccountId('');
+      setTimeRange(24);
       setIngestionProgress(0);
     }
   }, [platform, mode]);
@@ -282,6 +284,21 @@ export const ConnectionWizard = ({ platform, mode = 'connect', onClose, onSucces
                     className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-lg font-black tracking-wider outline-none focus:ring-4 focus:ring-brand-primary/10 focus:border-brand-primary transition-all text-slate-900 placeholder:text-slate-300 placeholder:font-bold"
                   />
                 </div>
+
+                <div className="space-y-2 text-left">
+                   <label className="text-sm font-bold text-slate-700 ml-1">Data Time Range</label>
+                   <select 
+                     value={timeRange} 
+                     onChange={(e) => setTimeRange(Number(e.target.value))}
+                     className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold outline-none focus:ring-4 focus:ring-brand-primary/10 focus:border-brand-primary transition-all text-slate-900 cursor-pointer"
+                   >
+                      <option value={3}>Last 3 Months</option>
+                      <option value={6}>Last 6 Months</option>
+                      <option value={12}>Last 12 Months</option>
+                      <option value={24}>Last 24 Months</option>
+                      <option value={36}>Last 36 Months</option>
+                   </select>
+                </div>
                 
                 <div className="p-4 bg-amber-50 rounded-2xl border border-amber-100 flex gap-3">
                   <Info className="text-amber-500 flex-shrink-0" size={20} />
@@ -382,7 +399,7 @@ export const ConnectionWizard = ({ platform, mode = 'connect', onClose, onSucces
                        </div>
                        <div className="p-4 bg-white rounded-2xl border border-slate-100 shadow-sm">
                           <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Time Range</span>
-                          <span className="text-sm font-black text-slate-900">Last 24 Months</span>
+                          <span className="text-sm font-black text-slate-900">Last {timeRange} Months</span>
                        </div>
                     </div>
                  </div>
@@ -391,7 +408,7 @@ export const ConnectionWizard = ({ platform, mode = 'connect', onClose, onSucces
                    <div className="pt-4 animate-in slide-in-from-bottom-2 duration-500">
                       <button 
                         onClick={() => {
-                          onSuccess(platform.id);
+                          onSuccess(platform.id, timeRange);
                           onClose();
                         }}
                         className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black hover:bg-slate-800 transition-all active:scale-95"

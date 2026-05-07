@@ -3,9 +3,6 @@ import {
     Search, 
     Home, 
     ChevronRight, 
-    Download, 
-    Code, 
-    MessageSquare, 
     Bell,
     Info,
     ChevronDown
@@ -242,31 +239,7 @@ export const DocumentationPage = () => {
                                 </a>
                             ))}
                         </nav>
-                    </div>
 
-                    {/* Resources */}
-                    <div className="space-y-4">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Resources</span>
-                        <div className="flex flex-col gap-4">
-                            <button className="flex items-center gap-3 text-sm font-bold text-slate-600 hover:text-[#ED1B24] transition-colors group">
-                                <div className="p-2 bg-slate-50 rounded-lg group-hover:bg-[#ED1B24]/5 transition-colors text-[#F58726]">
-                                    <Download size={16} />
-                                </div>
-                                Sample Dataset
-                            </button>
-                            <button className="flex items-center gap-3 text-sm font-bold text-slate-600 hover:text-[#ED1B24] transition-colors group">
-                                <div className="p-2 bg-slate-50 rounded-lg group-hover:bg-[#ED1B24]/5 transition-colors text-[#F58726]">
-                                    <Code size={16} />
-                                </div>
-                                Python SDK
-                            </button>
-                            <button className="flex items-center gap-3 text-sm font-bold text-slate-600 hover:text-[#ED1B24] transition-colors group">
-                                <div className="p-2 bg-slate-50 rounded-lg group-hover:bg-[#ED1B24]/5 transition-colors text-[#F58726]">
-                                    <MessageSquare size={16} />
-                                </div>
-                                Community Forum
-                            </button>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -282,26 +255,43 @@ export const DocumentationPage = () => {
 
             <style dangerouslySetInnerHTML={{ __html: `
                 .documentation-content h2 {
-                    font-size: 1.5rem;
-                    font-weight: 700;
-                    color: #1e293b;
-                    margin-top: 2rem;
-                    margin-bottom: 1rem;
+                    font-size: 1.75rem;
+                    font-weight: 800;
+                    color: #871F1E;
+                    margin-top: 2.5rem;
+                    margin-bottom: 1.25rem;
+                    letter-spacing: -0.025em;
                 }
                 .documentation-content p {
-                    margin-bottom: 1.25rem;
+                    margin-bottom: 1.5rem;
+                    color: #475569;
+                    font-size: 1.05rem;
+                    line-height: 1.75;
                 }
                 .documentation-content ul {
-                    list-style-type: disc;
-                    padding-left: 1.5rem;
-                    margin-bottom: 1.25rem;
-                    color: #475569;
+                    list-style-type: none;
+                    padding-left: 0;
+                    margin-bottom: 1.5rem;
                 }
                 .documentation-content li {
-                    margin-bottom: 0.5rem;
+                    margin-bottom: 0.75rem;
+                    padding-left: 1.5rem;
+                    position: relative;
+                    color: #334155;
+                    font-size: 1.05rem;
+                    line-height: 1.6;
+                }
+                .documentation-content li::before {
+                    content: "•";
+                    color: #ED1B24;
+                    font-weight: bold;
+                    position: absolute;
+                    left: 0;
+                    font-size: 1.2rem;
                 }
                 .documentation-content strong {
                     color: #0f172a;
+                    font-weight: 700;
                 }
             `}} />
         </div>

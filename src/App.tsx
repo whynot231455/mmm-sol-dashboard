@@ -20,6 +20,7 @@ import { VideoTutorialsPage } from "./pages/VideoTutorialsPage";
 import { LoginPage } from "./pages/LoginPage";
 import { SignUpPage } from "./pages/SignUpPage";
 import { ChatPage } from "./pages/ChatPage";
+import { SuccessPage } from "./pages/SuccessPage";
 
 const PlaceholderPage = ({ title }: { title: string }) => (
   <div className="bg-white p-12 rounded-2xl shadow-sm border border-slate-100 max-w-4xl mx-auto text-center space-y-6 mt-12">
@@ -84,6 +85,8 @@ function MainApp() {
         return <VideoTutorialsPage />;
       case "documentation":
         return <DocumentationPage />;
+      case "success":
+        return <SuccessPage />;
       default:
         return <PlaceholderPage title={activePage} />;
     }

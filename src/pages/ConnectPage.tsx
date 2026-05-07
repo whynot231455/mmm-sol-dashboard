@@ -64,7 +64,7 @@ const IntegrationCard = ({ name, type, icon, status, onConnect }: {
 };
 
 export const ConnectPage = () => {
-  const { rawData, mapping, setNotification, updateIntegration } = useDataStore();
+  const { rawData, mapping, setNotification, updateIntegration, syncPlatformData, setActivePage, setDataSourceView } = useDataStore();
   const [activeTab, setActiveTab] = useState('All Sources');
   const [searchQuery, setSearchQuery] = useState('');
   const [integrationStatuses, setIntegrationStatuses] = useState<Record<string, IntegrationStatus>>({
@@ -124,38 +124,77 @@ export const ConnectPage = () => {
     });
   };
 
-  const handleConnectionSuccess = (platformId: string) => {
-    // 1. Update the connection status to 'syncing' initially to simulate real ingestion
-    setIntegrationStatuses(prev => ({
-      ...prev,
-      [platformId]: 'syncing'
-    }));
-
-    // 2. Trigger a global notification
+  const handleConnectionSuccess = (platformId: string, months: number = 24) => {
     const platform = integrationDefinitions.find(d => d.platformId === platformId);
+    const platformName = platform?.name || platformId;
+
     setNotification({
-      id: Date.now().toString(),
+      id: crypto.randomUUID(),
       type: 'success',
-      message: `Successfully connected to ${platform?.name || platformId}! Initial data ingestion started.`,
+      message: `Successfully connected to ${platformName}! Initial data ingestion complete.`,
       actionLabel: 'View Performance',
       targetPage: 'measure'
     });
 
-    // 3. Simulate ingestion completion after 8 seconds
-    setTimeout(() => {
-      setIntegrationStatuses(prev => ({
-        ...prev,
-        [platformId]: 'connected'
-      }));
+    const newData = generatePlatformData(platformName, months);
       
-      // Update store with realistic row counts for integrated data
-      updateIntegration(platformId, {
-        syncStatus: 'HEALTHY',
-        lastSyncAt: new Date().toISOString(),
-        rowCount: Math.floor(Math.random() * 5000) + 1000,
-        ingestionProgress: 100
+    syncPlatformData(platformName, newData);
+
+    setIntegrationStatuses(prev => ({
+      ...prev,
+      [platformId]: 'connected'
+    }));
+      
+    updateIntegration(platformId, {
+      syncStatus: 'HEALTHY',
+      lastSyncAt: new Date().toISOString(),
+      rowCount: newData.length,
+      ingestionProgress: 100
+    });
+
+    // Navigate to Measure page and select Integrated Data
+    setDataSourceView('integrated');
+    setActivePage('measure');
+  };
+
+  const generatePlatformData = (platformName: string, months: number = 24) => {
+    const countries = ['USA', 'UK', 'Germany'];
+    const data: Record<string, unknown>[] = [];
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - (months * 30));
+    
+    // Support both mapped and standard keys
+    const channelKey = mapping.channel || 'Channel';
+    const dateKey = mapping.date || 'Date';
+    const spendKey = mapping.spend || 'Spend';
+    const revenueKey = mapping.revenue || 'Revenue';
+    const countryKey = mapping.country || 'Country';
+
+    for (let i = 0; i < (months * 30); i++) {
+      const d = new Date(startDate);
+      d.setDate(d.getDate() + i);
+      const dateStr = d.toISOString().split('T')[0];
+      
+      countries.forEach((ct) => {
+        const spend = Math.round(Math.random() * 2000 + 1000);
+        const revenue = Math.round(spend * (3.5 + Math.random() * 2.5));
+        
+        data.push({
+          [dateKey]: dateStr,
+          [channelKey]: platformName,
+          [countryKey]: ct,
+          [spendKey]: spend,
+          [revenueKey]: revenue,
+          // Fallback keys for integrated data consistency
+          Date: dateStr,
+          Channel: platformName,
+          Country: ct,
+          Spend: spend,
+          Revenue: revenue
+        });
       });
-    }, 8000);
+    }
+    return data;
   };
 
   const handleDisconnect = (platformId: string) => {

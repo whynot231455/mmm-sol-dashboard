@@ -172,13 +172,69 @@ export const useGeoLiftData = (): GeoLiftData => {
     const pastTests: GeoLiftTest[] = [];
     const monitorData: MonitorDataPoint[] = [];
     const regionPerformance: RegionPerformance[] = [];
+    
+    // Populate monitor data for 8 weeks (56 days)
+    for (let i = 0; i < 56; i++) {
+        const d = new Date('2024-04-01');
+        d.setDate(d.getDate() + i);
+        const dateStr = d.toISOString().split('T')[0];
+        // Create an increasing gap between treatment and control over time
+        const dayProgress = i / 56;
+        const controlValue = 15000 + pseudoRandom(dateStr + 'ctrl') * 5000;
+        // Treatment gets progressively better than control (up to 12.4% lift average)
+        const treatmentLift = 1 + (dayProgress * 0.25);
+        const treatmentValue = controlValue * treatmentLift + (pseudoRandom(dateStr + 'trt') * 2000 - 1000);
+        
+        monitorData.push({
+            date: dateStr,
+            treatment: treatmentValue,
+            control: controlValue,
+        });
+    }
+
+    // Populate region performance based on regions if available, or generate dummy regions
+    if (regions.length > 0) {
+        regions.forEach((r, idx) => {
+            const isTreatment = idx % 2 === 0;
+            const revenue = r.avgRevenue || (isTreatment ? 850000 : 750000);
+            const spend = r.spend || (isTreatment ? 25000 : 0);
+            regionPerformance.push({
+                regionId: r.id,
+                regionName: r.name,
+                region: r.name,
+                revenue,
+                spend,
+                roi: spend > 0 ? revenue / spend : 0,
+                group: isTreatment ? 'treatment' : 'control',
+                lift: isTreatment ? 12.4 + (pseudoRandom(r.name) * 5 - 2.5) : 0,
+            });
+        });
+    } else {
+        // Fallback dummy regions
+        ['New York', 'California', 'Texas', 'Florida'].forEach((name, idx) => {
+            const isTreatment = idx % 2 === 0;
+            const revenue = isTreatment ? 850000 : 750000;
+            const spend = isTreatment ? 25000 : 0;
+            regionPerformance.push({
+                regionId: name,
+                regionName: name,
+                region: name,
+                revenue,
+                spend,
+                roi: spend > 0 ? revenue / spend : 0,
+                group: isTreatment ? 'treatment' : 'control',
+                lift: isTreatment ? 12.4 + (pseudoRandom(name) * 5 - 2.5) : 0,
+            });
+        });
+    }
+
     const testConfig: TestConfig = {
       testId: 'test-1',
       testName: 'Brand Lift Experiment Q2',
       preTestWeeks: 4,
       testWeeks: 8,
       minEffect: 0.05,
-      confidence: 0.95,
+      confidence: 0.87,
       status: 'active',
       startDate: '2024-04-01',
       endDate: '2024-05-26',
@@ -191,7 +247,7 @@ export const useGeoLiftData = (): GeoLiftData => {
       id: 'res-1',
       testId: 'test-1',
       lift: 12.4,
-      confidence: 0.94,
+      confidence: 0.87,
       pValue: 0.02,
       standardError: 0.035,
       liftPercent: 12.4,

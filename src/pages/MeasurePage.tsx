@@ -31,7 +31,7 @@ const DataSourceSwitcher = () => {
   const { dataSourceView, setDataSourceView } = useDataStore();
 
   return (
-    <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200">
+    <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200 gap-1">
       <button
         onClick={() => setDataSourceView('legacy')}
         className={cn(
@@ -41,7 +41,7 @@ const DataSourceSwitcher = () => {
             : "text-slate-500 hover:text-slate-700"
         )}
       >
-        Legacy CSV
+        CSV data
       </button>
       <button
         onClick={() => setDataSourceView('integrated')}
@@ -53,7 +53,7 @@ const DataSourceSwitcher = () => {
         )}
       >
         <Zap size={12} className={dataSourceView === 'integrated' ? "text-brand-primary" : "text-slate-400"} />
-        Integrated
+        Integrated data
       </button>
     </div>
   );
@@ -112,7 +112,7 @@ export const MeasurePage = () => {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-3 mb-2">
+          <div className="flex items-center gap-6 mb-4">
             <h1 className="text-3xl font-black text-slate-900 tracking-tight">
               Measure Performance
             </h1>
@@ -224,11 +224,14 @@ export const MeasurePage = () => {
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         <div className="lg:col-span-3 space-y-6">
           <TrendChart data={trend} onExpand={() => setIsExpanded(true)} />
-          <ChannelContribution data={channels} />
         </div>
         <div className="space-y-6">
           <IngestionFeedWidget />
           <IncrementalityChart data={incrementalityData} />
+        </div>
+        {/* Full-width Heatmap */}
+        <div className="lg:col-span-4">
+          <ChannelContribution data={channels} />
         </div>
       </div>
     </div>
